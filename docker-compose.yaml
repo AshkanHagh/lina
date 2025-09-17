@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: registry.docker.ir/postgres:17.5
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=lina
+    ports:
+      - "5432:5432"
+
+  mailhog:
+    image: registry.docker.ir/mailhog/mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
