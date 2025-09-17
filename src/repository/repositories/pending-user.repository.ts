@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { eq } from "drizzle-orm";
 import { DATABASE } from "src/drizzle/constants";
 import {
   IPendingUser,
@@ -27,7 +28,11 @@ export class PendingUserRepository {
     return result;
   }
 
-  async update(tx: Database, form: Partial<IPendingUser>) {
-    await tx.update(PendingUserTable).set(form).execute();
+  async update(tx: Database, id: string, form: Partial<IPendingUser>) {
+    await tx
+      .update(PendingUserTable)
+      .set(form)
+      .where(eq(PendingUserTable.id, id))
+      .execute();
   }
 }

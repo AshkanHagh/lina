@@ -5,6 +5,7 @@ export enum LinaErrorType {
   INVALID_BODY_FIELD = "INVALID_BODY_FIELD",
   EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS",
   REQ_COOLDOWN = "REQ_COOLDOWN",
+  FAILED_TO_SEND_EMAIL = "FAILED_TO_SEND_EMAIL",
 }
 
 export class LinaError extends HttpException {
@@ -27,6 +28,9 @@ export class LinaError extends HttpException {
       }
       case LinaErrorType.REQ_COOLDOWN: {
         return HttpStatus.TOO_MANY_REQUESTS;
+      }
+      case LinaErrorType.FAILED_TO_SEND_EMAIL: {
+        return HttpStatus.SERVICE_UNAVAILABLE;
       }
       default: {
         return HttpStatus.INTERNAL_SERVER_ERROR;
