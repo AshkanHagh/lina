@@ -21,5 +21,6 @@ import * as schema from "./schemas";
       },
     },
   ],
+  exports: [DATABASE],
 })
 export class DrizzleModule {}
