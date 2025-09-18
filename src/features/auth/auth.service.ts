@@ -3,27 +3,29 @@ import { IAuthService } from "./interfaces/service";
 import { RegisterPayload, ResendVerificationCodePayload } from "./dto";
 import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
-import { UserRepository } from "src/repository/repositories/user.repository";
 import { LinaError, LinaErrorType } from "src/filters/exception";
-import { PendingUserRepository } from "src/repository/repositories/pending-user.repository";
 import { getElapsedTime } from "src/utils/elapsed-time";
 import * as argon2 from "argon2";
-import { IPendingUser } from "src/drizzle/schemas";
+import { IPendingUser, PendingUserTable } from "src/drizzle/schemas";
 import { AuthUtilService } from "./util.service";
 import { RESEND_CODE_COOLDOWN } from "./constants";
+import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
+import { eq } from "drizzle-orm";
 
 @Injectable()
 export class AuthService implements IAuthService {
   constructor(
     @Inject(DATABASE) private db: Database,
-    private userRepository: UserRepository,
-    private pendingUserRepository: PendingUserRepository,
+    @AuthConfig() private authConfig: IAuthConfig,
     private authUtilService: AuthUtilService,
   ) {}
 
   async register(payload: RegisterPayload): Promise<string> {
-    const user = await this.userRepository.findByEmail(payload.email, {
-      id: true,
+    const user = await this.db.query.UserTable.findFirst({
+      where: (table, funcs) => funcs.eq(table.email, payload.email),
+      columns: {
+        id: true,
+      },
     });
     if (user) {
       throw new LinaError(LinaErrorType.EMAIL_ALREADY_EXISTS);
@@ -33,10 +35,13 @@ export class AuthService implements IAuthService {
       | IPendingUser
       | Pick<IPendingUser, "id" | "createdAt" | "email">
       | undefined;
-    pendingUser = await this.pendingUserRepository.findByEmail(payload.email, {
-      id: true,
-      createdAt: true,
-      email: true,
+    pendingUser = await this.db.query.PendingUserTable.findFirst({
+      where: (table, funcs) => funcs.eq(table.email, payload.email),
+      columns: {
+        id: true,
+        createdAt: true,
+        email: true,
+      },
     });
 
     return await this.db.transaction(async (tx) => {
@@ -49,30 +54,31 @@ export class AuthService implements IAuthService {
       } else {
         // inserts new pending user if not exists
         const hashedPass = await argon2.hash(payload.password);
-        pendingUser = await this.pendingUserRepository.insert(tx, {
-          email: payload.email,
-          passwordHash: hashedPass,
-        });
+        const [newPendingUser] = await tx
+          .insert(PendingUserTable)
+          .values({
+            email: payload.email,
+            passwordHash: hashedPass,
+          })
+          .returning();
+        pendingUser = newPendingUser;
       }
 
-      return await this.authUtilService.initiateAccountVerification(
-        tx,
-        pendingUser,
-      );
+      return this.authUtilService.initiateAccountVerification(pendingUser);
     });
   }
 
   async resendVerificationCode(
     payload: ResendVerificationCodePayload,
   ): Promise<string> {
-    const pendingUser = await this.pendingUserRepository.findByEmail(
-      payload.email,
-      {
+    const pendingUser = await this.db.query.PendingUserTable.findFirst({
+      where: (table, funcs) => funcs.eq(table.email, payload.email),
+      columns: {
         id: true,
         createdAt: true,
         email: true,
       },
-    );
+    });
     if (!pendingUser) {
       throw new LinaError(LinaErrorType.NOT_REGISTERED);
     }
@@ -83,10 +89,13 @@ export class AuthService implements IAuthService {
     }
 
     return await this.db.transaction(async (tx) => {
-      return await this.authUtilService.initiateAccountVerification(
-        tx,
-        pendingUser,
-      );
+      await tx
+        .update(PendingUserTable)
+        .set({ createdAt: new Date() })
+        .where(eq(PendingUserTable.id, pendingUser.id))
+        .execute();
+
+      return this.authUtilService.initiateAccountVerification(pendingUser);
     });
   }
 }

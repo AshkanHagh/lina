@@ -5,7 +5,6 @@ import { AuthModule } from "./features/auth/auth.module";
 import { APP_FILTER, APP_PIPE } from "@nestjs/core";
 import { LinaExceptionFilter } from "./filters/exception-filter";
 import { ZodValidationPipe } from "./utils/zod-validation.pipe";
-import { RepositoryModule } from "./repository/repository.module";
 import { EmailModule } from "./features/email/email.module";
 import { WorkerModule } from "./worker/worker.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
@@ -15,7 +14,6 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
     ConfigsModule.register(),
     DrizzleModule,
     AuthModule,
-    RepositoryModule,
     EmailModule,
     WorkerModule,
     EventEmitterModule.forRoot(),

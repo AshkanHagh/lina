@@ -10,6 +10,10 @@ export class EmailService implements IEmailService {
   constructor(private mailerService: MailerService) {}
 
   async sendVerificationEmail(payload: VerificationEmail): Promise<void> {
+    this.logger.log("Verification email context", {
+      payload,
+    });
+
     await this.mailerService.sendMail({
       to: payload.email,
       subject: "Verify Your Account",
