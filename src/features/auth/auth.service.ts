@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { IAuthService } from "./interfaces/service";
-import { RegisterPayload } from "./dto";
+import { RegisterPayload, ResendVerificationCodePayload } from "./dto";
 import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
 import { UserRepository } from "src/repository/repositories/user.repository";
@@ -10,11 +10,10 @@ import { getElapsedTime } from "src/utils/elapsed-time";
 import * as argon2 from "argon2";
 import { IPendingUser } from "src/drizzle/schemas";
 import { AuthUtilService } from "./util.service";
+import { RESEND_CODE_COOLDOWN } from "./constants";
 
 @Injectable()
 export class AuthService implements IAuthService {
-  private REGISTER_COOLDOWN = 60 * 2;
-
   constructor(
     @Inject(DATABASE) private db: Database,
     private userRepository: UserRepository,
@@ -44,7 +43,7 @@ export class AuthService implements IAuthService {
       if (pendingUser) {
         // checks for register cooldown
         const elapsedTime = getElapsedTime(pendingUser.createdAt, "seconds");
-        if (elapsedTime < this.REGISTER_COOLDOWN) {
+        if (elapsedTime < RESEND_CODE_COOLDOWN) {
           throw new LinaError(LinaErrorType.REQ_COOLDOWN);
         }
       } else {
@@ -56,6 +55,34 @@ export class AuthService implements IAuthService {
         });
       }
 
+      return await this.authUtilService.initiateAccountVerification(
+        tx,
+        pendingUser,
+      );
+    });
+  }
+
+  async resendVerificationCode(
+    payload: ResendVerificationCodePayload,
+  ): Promise<string> {
+    const pendingUser = await this.pendingUserRepository.findByEmail(
+      payload.email,
+      {
+        id: true,
+        createdAt: true,
+        email: true,
+      },
+    );
+    if (!pendingUser) {
+      throw new LinaError(LinaErrorType.NOT_REGISTERED);
+    }
+
+    const elapsedTime = getElapsedTime(pendingUser.createdAt, "minutes");
+    if (elapsedTime < RESEND_CODE_COOLDOWN) {
+      throw new LinaError(LinaErrorType.REQ_COOLDOWN);
+    }
+
+    return await this.db.transaction(async (tx) => {
       return await this.authUtilService.initiateAccountVerification(
         tx,
         pendingUser,

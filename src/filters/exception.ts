@@ -6,6 +6,7 @@ export enum LinaErrorType {
   EMAIL_ALREADY_EXISTS = "EMAIL_ALREADY_EXISTS",
   REQ_COOLDOWN = "REQ_COOLDOWN",
   FAILED_TO_SEND_EMAIL = "FAILED_TO_SEND_EMAIL",
+  NOT_REGISTERED = "NOT_REGISTERED",
 }
 
 export class LinaError extends HttpException {
@@ -31,6 +32,9 @@ export class LinaError extends HttpException {
       }
       case LinaErrorType.FAILED_TO_SEND_EMAIL: {
         return HttpStatus.SERVICE_UNAVAILABLE;
+      }
+      case LinaErrorType.NOT_REGISTERED: {
+        return HttpStatus.NOT_FOUND;
       }
       default: {
         return HttpStatus.INTERNAL_SERVER_ERROR;

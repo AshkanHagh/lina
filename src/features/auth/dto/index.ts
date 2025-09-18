@@ -12,3 +12,14 @@ const RegisterSchema = z.object({
 
 export class RegisterDto extends createZodDto(RegisterSchema) {}
 export type RegisterPayload = z.infer<typeof RegisterSchema>;
+
+const ResendVerificationCode = z.object({
+  email: z.email().max(255),
+});
+
+export class ResendVerificationCodeDto extends createZodDto(
+  ResendVerificationCode,
+) {}
+export type ResendVerificationCodePayload = z.infer<
+  typeof ResendVerificationCode
+>;
