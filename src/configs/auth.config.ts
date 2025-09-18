@@ -7,6 +7,10 @@ export const authConfig = registerAs("auth", () => {
       secret: process.env.VERIFICATION_TOKEN_SECRET || "sh",
       exp: 60 * 15,
     },
+    authToken: {
+      secret: process.env.AUTH_TOKEN_SECRET || "sh",
+      exp: 1000 * 60 * 60 * 24 * 7,
+    },
   };
 });
 

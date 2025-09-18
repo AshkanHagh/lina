@@ -1,7 +1,13 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Body, Controller, Post, Res } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { IAuthController } from "./interfaces/controller";
-import { RegisterDto, ResendVerificationCodeDto } from "./dto";
+import {
+  RegisterDto,
+  ResendVerificationCodeDto,
+  VerifyRegisterDto,
+} from "./dto";
+import { Response } from "express";
+import { IUser } from "src/drizzle/schemas";
 
 @Controller("auth")
 export class AuthController implements IAuthController {
@@ -19,5 +25,14 @@ export class AuthController implements IAuthController {
   ): Promise<{ token: string }> {
     const token = await this.authService.resendVerificationCode(payload);
     return { token };
+  }
+
+  @Post("/verify")
+  async verifyRegister(
+    @Res({ passthrough: true }) res: Response,
+    @Body() payload: VerifyRegisterDto,
+  ): Promise<{ user: Omit<IUser, "passwordHash"> }> {
+    const user = await this.authService.verifyRegister(res, payload);
+    return { user };
   }
 }

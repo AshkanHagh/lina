@@ -1,16 +1,21 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { IAuthService } from "./interfaces/service";
-import { RegisterPayload, ResendVerificationCodePayload } from "./dto";
-import { DATABASE } from "src/drizzle/constants";
+import {
+  RegisterPayload,
+  ResendVerificationCodePayload,
+  VerifyRegisterPayload,
+} from "./dto";
+import { ACCOUNT_TYPE, DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
 import { LinaError, LinaErrorType } from "src/filters/exception";
 import { getElapsedTime } from "src/utils/elapsed-time";
 import * as argon2 from "argon2";
-import { IPendingUser, PendingUserTable } from "src/drizzle/schemas";
+import { IPendingUser, IUser, PendingUserTable } from "src/drizzle/schemas";
 import { AuthUtilService } from "./util.service";
 import { RESEND_CODE_COOLDOWN } from "./constants";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
 import { eq } from "drizzle-orm";
+import { Response } from "express";
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -96,6 +101,47 @@ export class AuthService implements IAuthService {
         .execute();
 
       return this.authUtilService.initiateAccountVerification(pendingUser);
+    });
+  }
+
+  async verifyRegister(
+    res: Response,
+    payload: VerifyRegisterPayload,
+  ): Promise<Omit<IUser, "passwordHash">> {
+    // no need to verify if the pending userscreation has expired,
+    // as an expired JWT token automatically invalidates the row
+    const tokenPayload = this.authUtilService.verifyJwtToken<{
+      userId: string;
+      code: number;
+    }>(payload.token, this.authConfig.verification.secret);
+
+    const [pendingUser] = await this.db
+      .select()
+      .from(PendingUserTable)
+      .where(eq(PendingUserTable.id, tokenPayload.userId));
+    if (!pendingUser) {
+      throw new LinaError(LinaErrorType.NOT_REGISTERED);
+    }
+    if (payload.code !== tokenPayload.code) {
+      throw new LinaError(LinaErrorType.INVALID_CODE);
+    }
+
+    return await this.db.transaction(async (tx) => {
+      await tx
+        .delete(PendingUserTable)
+        .where(eq(PendingUserTable.id, pendingUser.id))
+        .execute();
+
+      const user = await this.authUtilService.initiateUserAccount(tx, {
+        email: pendingUser.email,
+        passwordHash: pendingUser.passwordHash,
+        isVerified: false,
+        accountType: ACCOUNT_TYPE.LOCAL,
+        emailVerifiedAt: new Date(),
+      });
+
+      this.authUtilService.generateAuthToken(res, user);
+      return user;
     });
   }
 }

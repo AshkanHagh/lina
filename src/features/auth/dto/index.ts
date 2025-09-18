@@ -23,3 +23,11 @@ export class ResendVerificationCodeDto extends createZodDto(
 export type ResendVerificationCodePayload = z.infer<
   typeof ResendVerificationCode
 >;
+
+const VerifyRegister = z.object({
+  token: z.jwt().max(300),
+  code: z.number().int().gte(100_000).lte(999_999),
+});
+
+export class VerifyRegisterDto extends createZodDto(VerifyRegister) {}
+export type VerifyRegisterPayload = z.infer<typeof VerifyRegister>;
