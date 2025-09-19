@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { IAuthService } from "./interfaces/service";
 import {
+  LoginPayload,
   RegisterPayload,
   ResendVerificationCodePayload,
   VerifyRegisterPayload,
@@ -10,12 +11,19 @@ import { Database } from "src/drizzle/types";
 import { LinaError, LinaErrorType } from "src/filters/exception";
 import { getElapsedTime } from "src/utils/elapsed-time";
 import * as argon2 from "argon2";
-import { IPendingUser, IUser, PendingUserTable } from "src/drizzle/schemas";
+import {
+  IPendingUser,
+  IUser,
+  PendingUserTable,
+  UserTable,
+  UserTwoFaTable,
+} from "src/drizzle/schemas";
 import { AuthUtilService } from "./util.service";
 import { RESEND_CODE_COOLDOWN } from "./constants";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
 import { eq } from "drizzle-orm";
 import { Response } from "express";
+import * as otplib from "otplib";
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -143,5 +151,52 @@ export class AuthService implements IAuthService {
       this.authUtilService.generateAuthToken(res, user);
       return user;
     });
+  }
+
+  async login(res: Response, payload: LoginPayload) {
+    const [result] = await this.db
+      .select()
+      .from(UserTable)
+      .where(eq(UserTable.email, payload.email));
+    if (!result) {
+      throw new LinaError(LinaErrorType.INVALID_EMAIL_OR_PASSWORD);
+    }
+    const { passwordHash, ...user } = result;
+
+    if (!passwordHash) {
+      throw new LinaError(LinaErrorType.ACCOUNT_NO_PASSWORD);
+    }
+    const passMatch = await argon2.verify(passwordHash, payload.password);
+    if (!passMatch) {
+      throw new LinaError(LinaErrorType.INVALID_EMAIL_OR_PASSWORD);
+    }
+
+    // simply generate token and logged in user
+    if (!user.twoFactor) {
+      this.authUtilService.generateAuthToken(res, user);
+      return user;
+    }
+    if (!payload.code) {
+      throw new LinaError(LinaErrorType.TWO_FACTOR_CODE_REQUIRED);
+    }
+
+    const [userTwoFa] = await this.db
+      .select({
+        secret: UserTwoFaTable.secret,
+      })
+      .from(UserTwoFaTable)
+      .where(eq(UserTwoFaTable.userId, user.id));
+
+    const isCodeValid = otplib.authenticator.check(
+      payload.code,
+      userTwoFa.secret,
+    );
+    if (!isCodeValid) {
+      throw new LinaError(LinaErrorType.INVALID_TWO_FACTOR_CODE);
+    }
+
+    this.authUtilService.generateAuthToken(res, user);
+
+    return user;
   }
 }

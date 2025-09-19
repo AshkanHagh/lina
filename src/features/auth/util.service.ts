@@ -53,7 +53,7 @@ export class AuthUtilService {
     }
   }
 
-  generateAuthToken(res: Response, user: Omit<IUser, "passwordHash">) {
+  generateAuthToken(res: Response, user: Pick<IUser, "email" | "id">) {
     const token = sign(
       {
         userId: user.id,

@@ -8,6 +8,11 @@ export enum LinaErrorType {
   NOT_REGISTERED = "NOT_REGISTERED",
   INVALID_TOKEN = "INVALID_TOKEN",
   INVALID_CODE = "INVALID_CODE",
+  INVALID_EMAIL_OR_PASSWORD = "INVALID_EMAIL_OR_PASSWORD",
+  ACCOUNT_NO_PASSWORD = "ACCOUNT_NO_PASSWORD",
+  QR_CODE_GENERATION_FAILED = "QR_CODE_GENERATION_FAILED",
+  TWO_FACTOR_CODE_REQUIRED = "TWO_FACTOR_CODE_REQUIRED",
+  INVALID_TWO_FACTOR_CODE = "INVALID_TWO_FACTOR_CODE",
 }
 
 export class LinaError extends HttpException {
@@ -25,6 +30,7 @@ export class LinaError extends HttpException {
       case LinaErrorType.EMAIL_ALREADY_EXISTS: {
         return HttpStatus.CONFLICT;
       }
+      case LinaErrorType.TWO_FACTOR_CODE_REQUIRED:
       case LinaErrorType.INVALID_BODY_FIELD: {
         return HttpStatus.UNPROCESSABLE_ENTITY;
       }
@@ -35,8 +41,13 @@ export class LinaError extends HttpException {
         return HttpStatus.NOT_FOUND;
       }
       case LinaErrorType.INVALID_CODE:
-      case LinaErrorType.INVALID_TOKEN: {
+      case LinaErrorType.INVALID_TWO_FACTOR_CODE:
+      case LinaErrorType.INVALID_TOKEN:
+      case LinaErrorType.INVALID_EMAIL_OR_PASSWORD: {
         return HttpStatus.UNAUTHORIZED;
+      }
+      case LinaErrorType.ACCOUNT_NO_PASSWORD: {
+        return HttpStatus.FORBIDDEN;
       }
       default: {
         return HttpStatus.INTERNAL_SERVER_ERROR;

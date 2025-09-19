@@ -1,5 +1,6 @@
 import { IUser } from "src/drizzle/schemas";
 import {
+  LoginDto,
   RegisterDto,
   ResendVerificationCodeDto,
   VerifyRegisterDto,
@@ -15,4 +16,5 @@ export interface IAuthController {
     res: Response,
     payload: VerifyRegisterDto,
   ): Promise<{ user: Omit<IUser, "passwordHash"> }>;
+  login(res: Response, payload: LoginDto): Promise<any>;
 }

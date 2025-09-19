@@ -1,5 +1,6 @@
 import { Response } from "express";
 import {
+  LoginPayload,
   RegisterPayload,
   ResendVerificationCodePayload,
   VerifyRegisterPayload,
@@ -15,4 +16,5 @@ export interface IAuthService {
     res: Response,
     payload: VerifyRegisterPayload,
   ): Promise<Omit<IUser, "passwordHash">>;
+  login(res: Response, payload: LoginPayload): Promise<any>;
 }
