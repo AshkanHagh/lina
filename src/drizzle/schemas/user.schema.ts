@@ -3,7 +3,8 @@ import { createdAt, id, updatedAt } from "./helpers";
 import { ACCOUNT_TYPE } from "../constants";
 import { relations } from "drizzle-orm";
 import { OAuthAccountTable } from "./oauth-account.schema";
-import { UserTwoFaTable } from "./user-two-fa.schema";
+import { TwoFactorSecretTable } from "./two-factor-secret.schema";
+import { TwoFactorBackupTable } from "./two-factor-backup.schema";
 
 export const accountTypeEnum = pgEnum("account_type_enum", ACCOUNT_TYPE);
 
@@ -28,7 +29,8 @@ export const UserTable = pgTable("users", (table) => {
 
 export const UserRelations = relations(UserTable, ({ one, many }) => ({
   oauthAccount: many(OAuthAccountTable),
-  twoFa: one(UserTwoFaTable),
+  twoFactorSecret: one(TwoFactorSecretTable),
+  twoFactorBackupCodes: many(TwoFactorBackupTable),
 }));
 
 export type IUser = typeof UserTable.$inferSelect;

@@ -13,6 +13,9 @@ export enum LinaErrorType {
   QR_CODE_GENERATION_FAILED = "QR_CODE_GENERATION_FAILED",
   TWO_FACTOR_CODE_REQUIRED = "TWO_FACTOR_CODE_REQUIRED",
   INVALID_TWO_FACTOR_CODE = "INVALID_TWO_FACTOR_CODE",
+  UNAUTHORIZED = "UNAUTHORIZED",
+  TWO_FACTOR_ENABLE = "TWO_FACTOR_ENABLE",
+  INVALID_BACKUP_CODE = "INVALID_BACKUP_CODE",
 }
 
 export class LinaError extends HttpException {
@@ -40,14 +43,19 @@ export class LinaError extends HttpException {
       case LinaErrorType.NOT_REGISTERED: {
         return HttpStatus.NOT_FOUND;
       }
+      case LinaErrorType.UNAUTHORIZED:
       case LinaErrorType.INVALID_CODE:
       case LinaErrorType.INVALID_TWO_FACTOR_CODE:
       case LinaErrorType.INVALID_TOKEN:
-      case LinaErrorType.INVALID_EMAIL_OR_PASSWORD: {
+      case LinaErrorType.INVALID_EMAIL_OR_PASSWORD:
+      case LinaErrorType.INVALID_BACKUP_CODE: {
         return HttpStatus.UNAUTHORIZED;
       }
       case LinaErrorType.ACCOUNT_NO_PASSWORD: {
         return HttpStatus.FORBIDDEN;
+      }
+      case LinaErrorType.TWO_FACTOR_ENABLE: {
+        return HttpStatus.BAD_REQUEST;
       }
       default: {
         return HttpStatus.INTERNAL_SERVER_ERROR;

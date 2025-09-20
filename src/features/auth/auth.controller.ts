@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from "@nestjs/common";
+import { Body, Controller, Get, Post, Res, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { IAuthController } from "./interfaces/controller";
 import {
@@ -6,9 +6,12 @@ import {
   RegisterDto,
   ResendVerificationCodeDto,
   VerifyRegisterDto,
+  VerifyTwoFactorDto,
 } from "./dto";
 import { Response } from "express";
 import { IUser } from "src/drizzle/schemas";
+import { AuthorizationGuard } from "./guards/authorization.guard";
+import { User } from "./decorators/user.decorator";
 
 @Controller("auth")
 export class AuthController implements IAuthController {
@@ -43,5 +46,23 @@ export class AuthController implements IAuthController {
     @Body() payload: LoginDto,
   ) {
     return await this.authService.login(res, payload);
+  }
+
+  @Get("/two-factor/setup")
+  @UseGuards(AuthorizationGuard)
+  async setupTwoFactor(
+    @User() user: IUser,
+  ): Promise<{ secret: string; qrCodeUrl: string }> {
+    return await this.authService.setupTwoFactor(user);
+  }
+
+  @Post("/two-factor/verify")
+  @UseGuards(AuthorizationGuard)
+  async verifyTwoFactor(
+    @User() user: Omit<IUser, "passwordHash">,
+    @Body() payload: VerifyTwoFactorDto,
+  ): Promise<{ codes: string[] }> {
+    const codes = await this.authService.verifyTwoFactor(user, payload);
+    return { codes };
   }
 }

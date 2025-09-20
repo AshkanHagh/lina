@@ -3,7 +3,7 @@ import { UserTable } from "./user.schema";
 import { createdAt, updatedAt } from "./helpers";
 import { relations } from "drizzle-orm";
 
-export const UserTwoFaTable = pgTable("user_two_fa", (table) => {
+export const TwoFactorSecretTable = pgTable("two_factor_secrets", (table) => {
   return {
     userId: table
       .uuid()
@@ -15,9 +15,12 @@ export const UserTwoFaTable = pgTable("user_two_fa", (table) => {
   };
 });
 
-export const UserTwoFaRelations = relations(UserTwoFaTable, ({ one }) => ({
-  user: one(UserTable, {
-    fields: [UserTwoFaTable.userId],
-    references: [UserTable.id],
+export const TwoFactorSecretRelations = relations(
+  TwoFactorSecretTable,
+  ({ one }) => ({
+    user: one(UserTable, {
+      fields: [TwoFactorSecretTable.userId],
+      references: [UserTable.id],
+    }),
   }),
-}));
+);
