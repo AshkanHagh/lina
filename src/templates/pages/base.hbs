@@ -1,0 +1,16 @@
+<!-- Base Layout Template -->
+<!-- templates/emails/layouts/base.hbs -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{subject}}</title>
+</head>
+<body>
+  {{> header }}
+  <!-- Boby -->
+  {{> (lookup . 'partialBody') }}
+  <!-- Footer -->
+  {{> footer }}
+</body>
+</html>
