@@ -16,6 +16,10 @@ export enum LinaErrorType {
   UNAUTHORIZED = "UNAUTHORIZED",
   TWO_FACTOR_ENABLE = "TWO_FACTOR_ENABLE",
   INVALID_BACKUP_CODE = "INVALID_BACKUP_CODE",
+  OAUTH_FAILED = "OAUTH_FAILED",
+  OAUTH_USER_FAILED = "OAUTH_USER_FAILED",
+  NOT_FOUND = "NOT_FOUND",
+  OAUTH_STATE_EXPIRED = "OAUTH_STATE_EXPIRED",
 }
 
 export class LinaError extends HttpException {
@@ -30,6 +34,9 @@ export class LinaError extends HttpException {
 
   static getStatusCode(type: LinaErrorType) {
     switch (type) {
+      case LinaErrorType.OAUTH_USER_FAILED: {
+        return HttpStatus.SERVICE_UNAVAILABLE;
+      }
       case LinaErrorType.EMAIL_ALREADY_EXISTS: {
         return HttpStatus.CONFLICT;
       }
@@ -40,7 +47,8 @@ export class LinaError extends HttpException {
       case LinaErrorType.REQ_COOLDOWN: {
         return HttpStatus.TOO_MANY_REQUESTS;
       }
-      case LinaErrorType.NOT_REGISTERED: {
+      case LinaErrorType.NOT_REGISTERED:
+      case LinaErrorType.NOT_FOUND: {
         return HttpStatus.NOT_FOUND;
       }
       case LinaErrorType.UNAUTHORIZED:
@@ -54,6 +62,7 @@ export class LinaError extends HttpException {
       case LinaErrorType.ACCOUNT_NO_PASSWORD: {
         return HttpStatus.FORBIDDEN;
       }
+      case LinaErrorType.OAUTH_STATE_EXPIRED:
       case LinaErrorType.TWO_FACTOR_ENABLE: {
         return HttpStatus.BAD_REQUEST;
       }

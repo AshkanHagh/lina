@@ -28,7 +28,7 @@ export const UserTable = pgTable("users", (table) => {
 });
 
 export const UserRelations = relations(UserTable, ({ one, many }) => ({
-  oauthAccount: many(OAuthAccountTable),
+  oauthAccount: one(OAuthAccountTable),
   twoFactorSecret: one(TwoFactorSecretTable),
   twoFactorBackupCodes: many(TwoFactorBackupTable),
 }));

@@ -35,12 +35,14 @@
     "cryptr": "^6.4.0",
     "drizzle-orm": "^0.44.5",
     "jsonwebtoken": "^9.0.2",
+    "ky": "^1.11.0",
     "nestjs-zod": "^5.0.1",
     "otplib": "^12.0.1",
     "pg": "^8.16.3",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "simple-oauth2": "^5.1.0",
     "zod": "^4.1.9"
   },
   "devDependencies": {
@@ -58,6 +60,7 @@
     "@types/node": "^22.10.7",
     "@types/pg": "^8.15.5",
     "@types/qrcode": "^1.5.5",
+    "@types/simple-oauth2": "^5.0.7",
     "@types/supertest": "^6.0.2",
     "drizzle-kit": "^0.31.4",
     "eslint": "^9.18.0",

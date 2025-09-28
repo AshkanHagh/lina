@@ -1,5 +1,5 @@
 import { pgTable } from "drizzle-orm/pg-core";
-import { createdAt, id, providerEnum, updatedAt } from "./helpers";
+import { createdAt, id, updatedAt } from "./helpers";
 import { UserTable } from "./user.schema";
 import { relations } from "drizzle-orm";
 
@@ -10,8 +10,7 @@ export const OAuthAccountTable = pgTable("oauth_accounts", (table) => {
       .uuid()
       .notNull()
       .references(() => UserTable.id),
-    providerId: table.text().notNull(),
-    provider: providerEnum().notNull(),
+    providerId: table.integer().notNull(),
     createdAt,
     updatedAt,
   };

@@ -74,7 +74,8 @@ export class AuthUtilService {
 
   async initiateUserAccount(tx: Database, insertForm: IUserInsertForm) {
     // removing passwordHash row from user table return object
-    const { passwordHash: _, ...userColumns } = getTableColumns(UserTable);
+    // eslint-disable-next-line
+    const { passwordHash, ...userColumns } = getTableColumns(UserTable);
     const user = await tx
       .insert(UserTable)
       .values(insertForm)
