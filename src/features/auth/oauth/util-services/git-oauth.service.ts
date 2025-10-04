@@ -2,8 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { AuthorizationCode } from "simple-oauth2";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
 import { LinaError, LinaErrorType } from "src/filters/exception";
-import ky from "ky";
-import { GithubUserEmailResponse, GithubUserResponse } from "../types";
+import { Octokit } from "@octokit/rest";
 
 export interface GithubUser {
   id: number;
@@ -42,28 +41,11 @@ export class GitOAuthService {
 
   async #getUserDetail(accessToken: string): Promise<GithubUser> {
     try {
-      const [user, emails] = await Promise.all([
-        ky
-          .get("https://api.github.com/user", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "User-agent": "lina",
-            },
-          })
-          .json<GithubUserResponse>(),
-        ky
-          .get("https://api.github.com/user/emails", {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "User-agent": "lina",
-            },
-          })
-          .json<GithubUserEmailResponse[]>(),
-      ]);
+      const octokit = new Octokit({ auth: accessToken });
+      const { data: user } = await octokit.users.getAuthenticated();
+      const emails = await octokit.users.listEmailsForAuthenticatedUser();
 
-      const primaryEmail = emails.find(
-        (email) => email.verified && email.primary,
-      );
+      const primaryEmail = emails.data.find((e) => e.verified && e.primary);
       if (!primaryEmail) {
         throw new LinaError(
           LinaErrorType.OAUTH_USER_FAILED,
@@ -76,7 +58,8 @@ export class GitOAuthService {
         email: primaryEmail.email,
         id: user.id,
         login: user.login,
-        name: user.name,
+        // ignore for now will fix later
+        name: user.name!,
       };
     } catch (error) {
       throw new LinaError(LinaErrorType.OAUTH_USER_FAILED, error);
