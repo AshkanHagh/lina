@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { randomBytes } from "node:crypto";
 import { AuthorizationCode } from "simple-oauth2";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
 import { LinaError, LinaErrorType } from "src/filters/exception";
@@ -96,9 +95,5 @@ export class GitOAuthService {
     } catch (error) {
       throw new LinaError(LinaErrorType.OAUTH_FAILED, error);
     }
-  }
-
-  generateState() {
-    return randomBytes(32).toString("hex");
   }
 }

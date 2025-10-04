@@ -15,6 +15,7 @@ import { AuthUtilService } from "../util.service";
 import { Response } from "express";
 import { getElapsedTime } from "src/utils/elapsed-time";
 import { OAUTH_STATE_EXP_MINUTES } from "./constants";
+import { generateState } from "src/utils/state";
 
 @Injectable()
 export class OAuthService implements IOAuthService {
@@ -25,7 +26,7 @@ export class OAuthService implements IOAuthService {
   ) {}
 
   async initiateOAuth() {
-    const state = this.gitOAuthService.generateState();
+    const state = generateState();
     const url = this.gitOAuthService.generateAuthUrl(
       ["user:read", "user:email"],
       state,
@@ -85,7 +86,7 @@ export class OAuthService implements IOAuthService {
         });
       }
 
-      if (userOAuthAccount?.oauthAccount) {
+      if (!userOAuthAccount?.oauthAccount) {
         await tx
           .insert(OAuthAccountTable)
           .values({
