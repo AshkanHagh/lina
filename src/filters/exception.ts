@@ -20,6 +20,9 @@ export enum LinaErrorType {
   OAUTH_USER_FAILED = "OAUTH_USER_FAILED",
   NOT_FOUND = "NOT_FOUND",
   OAUTH_STATE_EXPIRED = "OAUTH_STATE_EXPIRED",
+  GITHUB_APP_INSTALLATION = "GITHUB_APP_INSTALLATION",
+  GITHUB_APP_ALREADY_INSTALLED = "GITHUB_APP_ALREADY_INSTALLED",
+  WEBHOOK_VERIFICATION_FAILED = "WEBHOOK_VERIFICATION_FAILED",
 }
 
 export class LinaError extends HttpException {
@@ -37,6 +40,7 @@ export class LinaError extends HttpException {
       case LinaErrorType.OAUTH_USER_FAILED: {
         return HttpStatus.SERVICE_UNAVAILABLE;
       }
+      case LinaErrorType.GITHUB_APP_ALREADY_INSTALLED:
       case LinaErrorType.EMAIL_ALREADY_EXISTS: {
         return HttpStatus.CONFLICT;
       }

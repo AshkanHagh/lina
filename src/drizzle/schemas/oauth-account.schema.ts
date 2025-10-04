@@ -2,6 +2,8 @@ import { pgTable } from "drizzle-orm/pg-core";
 import { createdAt, id, updatedAt } from "./helpers";
 import { UserTable } from "./user.schema";
 import { relations } from "drizzle-orm";
+import { RepositoryTable } from "./repository.schema";
+import { GithubAppStateTable } from "./github-app-state.schema";
 
 export const OAuthAccountTable = pgTable("oauth_accounts", (table) => {
   return {
@@ -11,6 +13,7 @@ export const OAuthAccountTable = pgTable("oauth_accounts", (table) => {
       .notNull()
       .references(() => UserTable.id),
     providerId: table.integer().notNull(),
+    installationId: table.integer(),
     createdAt,
     updatedAt,
   };
@@ -18,11 +21,13 @@ export const OAuthAccountTable = pgTable("oauth_accounts", (table) => {
 
 export const OAuthAccountRelations = relations(
   OAuthAccountTable,
-  ({ one }) => ({
+  ({ one, many }) => ({
     user: one(UserTable, {
       fields: [OAuthAccountTable.userId],
       references: [UserTable.id],
     }),
+    repositories: many(RepositoryTable),
+    githubAppState: one(GithubAppStateTable),
   }),
 );
 

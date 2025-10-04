@@ -5,3 +5,5 @@ export * from "./pending-user.schema";
 export * from "./two-factor-secret.schema";
 export * from "./two-factor-backup.schema";
 export * from "./helpers";
+export * from "./repository.schema";
+export * from "./github-app-state.schema";
