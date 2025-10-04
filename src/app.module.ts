@@ -8,6 +8,7 @@ import { ZodValidationPipe } from "./utils/zod-validation.pipe";
 import { EmailModule } from "./features/email/email.module";
 import { WorkerModule } from "./worker/worker.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
+import { GithubModule } from "./features/github/github.module";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
     EmailModule,
     WorkerModule,
     EventEmitterModule.forRoot(),
+    GithubModule,
   ],
   providers: [
     {

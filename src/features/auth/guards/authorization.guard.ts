@@ -32,7 +32,6 @@ export class AuthorizationGuard implements CanActivate {
 
     const req = context.switchToHttp().getRequest<Request>();
 
-    // eslint-disable-next-line
     const token = req.cookies[AUTH_TOKEN_COOKIE_NAME] as string | undefined;
     if (!token) {
       throw new LinaError(LinaErrorType.UNAUTHORIZED);

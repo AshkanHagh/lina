@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 import { dbConfig } from "./db.config";
 import { authConfig } from "./auth.config";
 import { mailConfig } from "./mail.config";
+import { githubConfig } from "./github.config";
 
 @Module({})
 export class ConfigsModule {
@@ -10,7 +11,7 @@ export class ConfigsModule {
     return ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      load: [dbConfig, authConfig, mailConfig],
+      load: [dbConfig, authConfig, mailConfig, githubConfig],
     });
   }
 }
