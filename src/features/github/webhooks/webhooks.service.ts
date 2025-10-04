@@ -87,10 +87,43 @@ export class WebhooksService implements IWebhooksService, OnModuleInit {
     });
   }
 
+  // removes users repository and installation id, but the resources remains in app
+  private async handleInstallationDeleted(
+    event: EmitterWebhookEvent<"installation.deleted">,
+  ) {
+    this.logger.log(`webhooks: ${event.name}`);
+    const installationId = event.payload.installation.id;
+
+    const [user] = await this.db
+      .select({ id: OAuthAccountTable.id })
+      .from(OAuthAccountTable)
+      .where(eq(OAuthAccountTable.installationId, installationId));
+    if (!user) {
+      throw new LinaError(LinaErrorType.NOT_FOUND);
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(RepositoryTable)
+        .where(eq(RepositoryTable.ownerId, user.id))
+        .execute();
+
+      await tx
+        .update(OAuthAccountTable)
+        .set({ installationId: null })
+        .where(eq(OAuthAccountTable.id, user.id))
+        .execute();
+    });
+  }
+
   onModuleInit() {
     this.webhook.on(
       "installation_repositories",
       this.handleRepositoryInstallation.bind(this),
+    );
+    this.webhook.on(
+      "installation.deleted",
+      this.handleInstallationDeleted.bind(this),
     );
   }
 }
