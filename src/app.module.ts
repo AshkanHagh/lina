@@ -9,6 +9,7 @@ import { EmailModule } from "./features/email/email.module";
 import { WorkerModule } from "./worker/worker.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { GithubModule } from "./features/github/github.module";
+import { ScheduleModule } from "@nestjs/schedule";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { GithubModule } from "./features/github/github.module";
     WorkerModule,
     EventEmitterModule.forRoot(),
     GithubModule,
+    ScheduleModule.forRoot(),
   ],
   providers: [
     {
