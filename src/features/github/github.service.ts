@@ -91,7 +91,6 @@ export class GithubService implements IGithubService {
             isPrivate: repo.private,
             isFork: repo.fork,
             url: repo.url,
-            defaultBranch: repo.default_branch,
             ownerId: state.oauth_accounts.id,
             providerId: repo.id,
           });

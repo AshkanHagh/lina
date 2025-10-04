@@ -19,7 +19,6 @@ export const RepositoryTable = pgTable("repositories", (table) => {
     isPrivate: table.boolean().notNull(),
     isFork: table.boolean().notNull(),
     url: table.text().notNull(),
-    defaultBranch: table.varchar({ length: 255 }).notNull(),
     createdAt,
     updatedAt,
   };

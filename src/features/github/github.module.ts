@@ -3,10 +3,12 @@ import { GithubService } from "./github.service";
 import { GithubController } from "./github.controller";
 import { DrizzleModule } from "src/drizzle/drizzle.module";
 import { GithubAppService } from "./util-services/github-app.service";
+import { WebhooksController } from "./webhooks/webhooks.controller";
+import { WebhooksService } from "./webhooks/webhooks.service";
 
 @Module({
   imports: [DrizzleModule],
-  controllers: [GithubController],
-  providers: [GithubService, GithubAppService],
+  controllers: [GithubController, WebhooksController],
+  providers: [GithubService, GithubAppService, WebhooksService],
 })
 export class GithubModule {}

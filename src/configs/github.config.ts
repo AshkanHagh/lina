@@ -7,7 +7,7 @@ export const githubConfig = registerAs("github", () => {
     privateKey: process.env.GITHUB_APP_PRIVATE_KEY,
     clientId: process.env.GITHUB_APP_CLIENT_ID,
     webhookSecret: process.env.GITHUB_WEBHOOK_SECRET,
-    webhookProxyUrl: process.env.WEBHOOK_PROXY_URL,
+    webhookUrl: process.env.WEBHOOK_URL,
     appSlug: process.env.GITHUB_APP_SLUG,
   };
 });
