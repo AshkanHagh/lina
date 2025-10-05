@@ -4,7 +4,11 @@ import { GithubConfig, IGithubConfig } from "src/configs/github.config";
 import { generateState } from "src/utils/state";
 import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
-import { OAuthAccountTable, RepositoryTable } from "src/drizzle/schemas";
+import {
+  OAuthAccountTable,
+  RepositoryBranchTable,
+  RepositoryTable,
+} from "src/drizzle/schemas";
 import { InstallationCallbackPayload } from "./dto";
 import { eq } from "drizzle-orm";
 import { LinaError, LinaErrorType } from "src/filters/exception";
@@ -57,8 +61,23 @@ export class GithubService implements IGithubService {
       throw new LinaError(LinaErrorType.NOT_FOUND, "STATE_NOT_FOUND");
     }
 
-    const repositories = await this.githubAppService.getInstallationRepos(
+    // get user available repositories with branches
+    const octokit = await this.githubAppService.createRestClient(
       payload.installation_id,
+    );
+    const repos = await this.githubAppService.getInstallationRepos(octokit);
+    const reposWithBranches = await Promise.all(
+      repos.map(async (repo) => {
+        const branches = await this.githubAppService.getReposBranches(octokit, {
+          name: repo.name,
+          owner: repo.owner.login,
+          defaultBranch: repo.default_branch,
+        });
+        return {
+          ...repo,
+          branches,
+        };
+      }),
     );
 
     await this.db.transaction(async (tx) => {
@@ -76,23 +95,34 @@ export class GithubService implements IGithubService {
           .set({ installationId: payload.installation_id })
           .where(eq(OAuthAccountTable.id, state.oauth_accounts.id))
           .execute();
-      } else {
+      } else if (payload.setup_action === "update") {
         await tx
           .delete(RepositoryTable)
           .where(eq(RepositoryTable.ownerId, state.oauth_accounts.id))
           .execute();
       }
 
+      // insert repos and repos branches
       await Promise.all(
-        repositories.map(async (repo) => {
-          return tx.insert(RepositoryTable).values({
-            name: repo.name,
-            fullName: repo.full_name,
-            isPrivate: repo.private,
-            isFork: repo.fork,
-            url: repo.url,
-            ownerId: state.oauth_accounts.id,
-            providerId: repo.id,
+        reposWithBranches.map(async (repo) => {
+          const [repoResult] = await tx
+            .insert(RepositoryTable)
+            .values({
+              name: repo.name,
+              fullName: repo.full_name,
+              isPrivate: repo.private,
+              isFork: repo.fork,
+              url: repo.url,
+              ownerId: state.oauth_accounts.id,
+              providerId: repo.id,
+            })
+            .returning({ id: RepositoryTable.id });
+
+          return repo.branches.map(async (branch) => {
+            await tx.insert(RepositoryBranchTable).values({
+              repositoryId: repoResult.id,
+              ...branch,
+            });
           });
         }),
       );
