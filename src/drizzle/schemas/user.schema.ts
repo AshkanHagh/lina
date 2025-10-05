@@ -5,6 +5,7 @@ import { relations } from "drizzle-orm";
 import { OAuthAccountTable } from "./oauth-account.schema";
 import { TwoFactorSecretTable } from "./two-factor-secret.schema";
 import { TwoFactorBackupTable } from "./two-factor-backup.schema";
+import { HostTable } from "./host.schema";
 
 export const accountTypeEnum = pgEnum("account_type_enum", ACCOUNT_TYPE);
 
@@ -31,6 +32,7 @@ export const UserRelations = relations(UserTable, ({ one, many }) => ({
   oauthAccount: one(OAuthAccountTable),
   twoFactorSecret: one(TwoFactorSecretTable),
   twoFactorBackupCodes: many(TwoFactorBackupTable),
+  hosts: many(HostTable),
 }));
 
 export type IUser = typeof UserTable.$inferSelect;

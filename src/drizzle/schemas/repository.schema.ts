@@ -3,6 +3,7 @@ import { createdAt, id, updatedAt } from "./helpers";
 import { OAuthAccountTable } from "./oauth-account.schema";
 import { relations } from "drizzle-orm";
 import { RepositoryBranchTable } from "./repository-branch.schema";
+import { HostTable } from "./host.schema";
 
 // TODO: update oauth account to store oauth user infos
 // TODO: add new branches  table
@@ -33,5 +34,6 @@ export const RepositoryRelations = relations(
       references: [OAuthAccountTable.id],
     }),
     branches: many(RepositoryBranchTable),
+    host: one(HostTable),
   }),
 );
