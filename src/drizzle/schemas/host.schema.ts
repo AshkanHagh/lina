@@ -5,6 +5,7 @@ import { UserTable } from "./user.schema";
 import { HostEnvTable } from "./host-env.schema";
 import { relations } from "drizzle-orm";
 import { EnvTable } from "./env.schema";
+import { AUTO_DEPLOY_TRIGGER } from "../constants";
 
 export const HostStatesEnum = pgEnum("host_states", [
   "pending",
@@ -12,9 +13,10 @@ export const HostStatesEnum = pgEnum("host_states", [
   "paused",
   "stopped",
 ]);
-export const HostAutoDeployTriggerEnum = pgEnum("host_auto_deploy_trigger", [
-  "push",
-]);
+export const HostAutoDeployTriggerEnum = pgEnum(
+  "host_auto_deploy_trigger",
+  AUTO_DEPLOY_TRIGGER,
+);
 
 // TODO: add build plan references
 export const HostTable = pgTable("hosts", (table) => {
@@ -34,13 +36,10 @@ export const HostTable = pgTable("hosts", (table) => {
       .references(() => EnvTable.id),
     name: table.varchar({ length: 255 }).notNull(),
     slug: table.varchar({ length: 255 }).notNull(),
+    includedPath: table.text().array(),
+    ignoredPaths: table.text().array(),
     buildCommand: table.varchar({ length: 255 }),
     startCommand: table.varchar({ length: 255 }),
-    buildFilter: table
-      .varchar({ length: 255 })
-      .notNull()
-      .array()
-      .$type<string[]>(),
     autoDeploy: table.boolean().notNull(),
     baseDir: table.varchar({ length: 255 }).notNull(),
     dockerCommand: table.varchar({ length: 255 }),
@@ -49,13 +48,17 @@ export const HostTable = pgTable("hosts", (table) => {
     state: HostStatesEnum().notNull().default("pending"),
     healthCheckUrl: table.varchar({ length: 255 }),
     port: table.integer().notNull(),
-    autoDeployTrigger: HostAutoDeployTriggerEnum().notNull().default("push"),
+    autoDeployTrigger: HostAutoDeployTriggerEnum()
+      .notNull()
+      .default(AUTO_DEPLOY_TRIGGER.PUSH),
     preDeployCommand: table.varchar({ length: 255 }),
     url: table.varchar({ length: 255 }),
     createdAt,
     updatedAt,
   };
 });
+
+export type IHost = typeof HostTable.$inferSelect;
 
 export const HostRelations = relations(HostTable, ({ one, many }) => ({
   repository: one(RepositoryTable, {

@@ -9,13 +9,15 @@ export const RepositoryBranchTable = pgTable("repository_branches", (table) => {
     repositoryId: table
       .uuid()
       .notNull()
-      .references(() => RepositoryTable.id),
+      .references(() => RepositoryTable.id, { onDelete: "cascade" }),
     name: table.varchar({ length: 255 }).notNull(),
     isDefault: table.boolean().notNull(),
     createdAt,
     updatedAt,
   };
 });
+
+export type IRepositoryBranch = typeof RepositoryBranchTable.$inferSelect;
 
 export const RepositoryBranchRelations = relations(
   RepositoryBranchTable,

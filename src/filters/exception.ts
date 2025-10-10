@@ -23,6 +23,10 @@ export enum LinaErrorType {
   GITHUB_APP_INSTALLATION = "GITHUB_APP_INSTALLATION",
   GITHUB_APP_ALREADY_INSTALLED = "GITHUB_APP_ALREADY_INSTALLED",
   WEBHOOK_VERIFICATION_FAILED = "WEBHOOK_VERIFICATION_FAILED",
+  OAUTH_REQUIRED = "OAUTH_REQUIRED",
+  GITHUB_DOWNLOAD_ERROR = "GITHUB_DOWNLOAD_ERROR",
+  PERMISSION_DENIED = "PERMISSION_DENIED",
+  DOCKER_BUILD_ERROR = "DOCKER_BUILD_ERROR",
 }
 
 export class LinaError extends HttpException {
@@ -55,6 +59,7 @@ export class LinaError extends HttpException {
       case LinaErrorType.NOT_FOUND: {
         return HttpStatus.NOT_FOUND;
       }
+      case LinaErrorType.OAUTH_REQUIRED:
       case LinaErrorType.UNAUTHORIZED:
       case LinaErrorType.INVALID_CODE:
       case LinaErrorType.INVALID_TWO_FACTOR_CODE:
@@ -63,6 +68,7 @@ export class LinaError extends HttpException {
       case LinaErrorType.INVALID_BACKUP_CODE: {
         return HttpStatus.UNAUTHORIZED;
       }
+      case LinaErrorType.PERMISSION_DENIED:
       case LinaErrorType.ACCOUNT_NO_PASSWORD: {
         return HttpStatus.FORBIDDEN;
       }

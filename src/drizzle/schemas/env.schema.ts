@@ -14,6 +14,8 @@ export const EnvTable = pgTable("envs", (table) => {
   };
 });
 
+export type IEnv = typeof EnvTable.$inferSelect;
+
 export const EnvRelations = relations(EnvTable, ({ many }) => ({
   hosts: many(HostTable),
 }));

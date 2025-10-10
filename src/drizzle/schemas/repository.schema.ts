@@ -26,6 +26,8 @@ export const RepositoryTable = pgTable("repositories", (table) => {
   };
 });
 
+export type Repository = typeof RepositoryTable.$inferSelect;
+
 export const RepositoryRelations = relations(
   RepositoryTable,
   ({ one, many }) => ({
@@ -34,6 +36,6 @@ export const RepositoryRelations = relations(
       references: [OAuthAccountTable.id],
     }),
     branches: many(RepositoryBranchTable),
-    host: one(HostTable),
+    host: many(HostTable),
   }),
 );

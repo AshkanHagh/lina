@@ -16,5 +16,6 @@ import { GithubScheduler } from "./scheduler";
     WebhooksService,
     GithubScheduler,
   ],
+  exports: [GithubAppService],
 })
 export class GithubModule {}
