@@ -1,9 +1,8 @@
-import { BuildUtilService } from "../util.service";
 import { LinaError, LinaErrorType } from "src/filters/exception";
 import * as tar from "tar-fs";
 import path from "node:path";
 import { Dockerignore } from "src/templates/dockerfile-templates/dockerignore";
-import Dockerode from "dockerode";
+import * as Dockerode from "dockerode";
 import { DockerConfig, IDockerConfig } from "src/configs/docker.config";
 import { Injectable } from "@nestjs/common";
 import { DockerFiles } from "src/templates/dockerfile-templates";
@@ -13,10 +12,7 @@ import { writeFile } from "node:fs/promises";
 export class DockerBuildService {
   private docker: Dockerode;
 
-  constructor(
-    @DockerConfig() private dockerConfig: IDockerConfig,
-    private buildUtilService: BuildUtilService,
-  ) {
+  constructor(@DockerConfig() private dockerConfig: IDockerConfig) {
     this.docker = new Dockerode({
       host: this.dockerConfig.host,
       port: this.dockerConfig.port,

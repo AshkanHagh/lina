@@ -23,7 +23,7 @@ export class BuildService implements IBuildService {
     const tmpDir = await tmp.dir({ unsafeCleanup: true });
     try {
       const { data: repoContent } = await octokit.repos.getContent({
-        owner: payload.repo.owner.name,
+        owner: payload.repo.owner.login,
         repo: payload.repo.name,
         path: payload.host.rootDir,
         ref: payload.branche.name,
@@ -34,7 +34,7 @@ export class BuildService implements IBuildService {
         repoContent,
         tmpDir.path,
         {
-          owner: payload.repo.owner.name,
+          owner: payload.repo.owner.login,
           repo: payload.repo.name,
           path: payload.host.rootDir,
           ref: payload.branche.name,

@@ -12,7 +12,8 @@ export const OAuthAccountTable = pgTable("oauth_accounts", (table) => {
       .uuid()
       .notNull()
       .references(() => UserTable.id),
-    name: table.varchar({ length: 255 }).notNull(),
+    login: table.varchar({ length: 255 }).notNull(),
+    avatarUrl: table.text(),
     providerId: table.integer().notNull(),
     installationId: table.integer(),
     createdAt,

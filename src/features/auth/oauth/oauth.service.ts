@@ -90,6 +90,8 @@ export class OAuthService implements IOAuthService {
         await tx
           .insert(OAuthAccountTable)
           .values({
+            login: oauthUser.login,
+            avatarUrl: oauthUser.avatar_url,
             userId: user.id,
             providerId: oauthUser.id,
           })
