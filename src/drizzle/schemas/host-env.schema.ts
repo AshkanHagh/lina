@@ -9,7 +9,7 @@ export const HostEnvTable = pgTable("host_envs", (table) => {
     hostId: table
       .uuid()
       .notNull()
-      .references(() => HostTable.id),
+      .references(() => HostTable.id, { onDelete: "cascade" }),
     name: table.varchar({ length: 255 }).notNull(),
     value: table.text().notNull(),
     createdAt,

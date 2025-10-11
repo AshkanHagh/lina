@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { IBuildService } from "./interfaces/service";
 import { BuildAndPushDockerImage } from "./types/types";
 import { GithubAppService } from "../github/util-services/github-app.service";
@@ -9,6 +9,8 @@ import { DockerBuildService } from "./services/docker-build.service";
 
 @Injectable()
 export class BuildService implements IBuildService {
+  private logger = new Logger(BuildService.name);
+
   constructor(
     private githubAppService: GithubAppService,
     private buildUtilServide: BuildUtilService,
@@ -16,32 +18,20 @@ export class BuildService implements IBuildService {
   ) {}
 
   async BuildAndPushDockerImage(payload: BuildAndPushDockerImage) {
+    this.logger.log(`start building docker image for ${payload.repo.name}`);
     await this.buildUtilServide.updateBuildStatus(payload.buildId, {
       status: "RUNNING",
     });
 
-    const octokit = await this.githubAppService.createRestClient(
-      payload.installationId,
-    );
     const tmpDir = await tmp.dir({ unsafeCleanup: true });
     try {
-      const { data: repoContent } = await octokit.repos.getContent({
-        owner: payload.repo.owner,
-        repo: payload.repo.name,
-        path: payload.repo.path,
-        ref: payload.repo.branch,
-      });
-
-      await this.buildUtilServide.downloadContents(
-        octokit,
-        repoContent,
+      await this.githubAppService.cloneRepo(
+        payload.installationId,
+        payload.repo.name,
+        payload.repo.owner,
+        payload.repo.branch,
         tmpDir.path,
-        {
-          owner: payload.repo.owner,
-          repo: payload.repo.name,
-          path: payload.repo.path,
-          ref: payload.repo.branch,
-        },
+        payload.repo.path,
       );
 
       await this.dockerBuildService.buildImage(
@@ -58,7 +48,7 @@ export class BuildService implements IBuildService {
         // eslint-disable-next-line
         error: error.message,
       });
-      throw new LinaError(LinaErrorType.GITHUB_DOWNLOAD_ERROR, error);
+      throw new LinaError(LinaErrorType.DOCKER_BUILD_ERROR, error);
     } finally {
       await tmpDir.cleanup();
     }

@@ -1,11 +1,17 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { createAppAuth } from "@octokit/auth-app";
 import { Octokit } from "@octokit/rest";
+import { execSync } from "node:child_process";
+import * as path from "node:path";
 import { GithubConfig, IGithubConfig } from "src/configs/github.config";
 import { LinaError, LinaErrorType } from "src/filters/exception";
+import * as tmp from "tmp-promise";
+import * as fs from "node:fs/promises";
 
 @Injectable()
 export class GithubAppService {
+  private logger = new Logger(GithubAppService.name);
+
   constructor(@GithubConfig() private githubConfig: IGithubConfig) {}
 
   async createRestClient(installationId: number): Promise<Octokit> {
@@ -51,6 +57,49 @@ export class GithubAppService {
       }));
     } catch (error) {
       throw new LinaError(LinaErrorType.GITHUB_APP_INSTALLATION, error);
+    }
+  }
+
+  async cloneRepo(
+    installationId: number,
+    repo: string,
+    owner: string,
+    branch: string,
+    targetPath: string,
+    rootDir: string,
+  ) {
+    this.logger.log(`Cloning repo ${repo} from ${owner} at branch ${branch}`);
+    const cloneTmpDir = await tmp.dir({ unsafeCleanup: true });
+
+    try {
+      const appAuth = createAppAuth({
+        appId: this.githubConfig.appId,
+        privateKey: this.githubConfig.privateKey!,
+        installationId,
+      });
+      const { token } = await appAuth({
+        type: "installation",
+        installationId,
+      });
+
+      const cloneUrl = `https://x-access-token:${token}@github.com/${owner}/${repo}.git`;
+      const cloneCommand = `git clone --depth 1 --branch ${branch} --single-branch ${cloneUrl} ${cloneTmpDir.path}`;
+      execSync(cloneCommand, {
+        stdio: "pipe",
+        maxBuffer: 1024 * 1024 * 300,
+      });
+
+      const sourcePath = path.join(cloneTmpDir.path, rootDir);
+
+      await fs.rm(path.join(cloneTmpDir.path, ".git"), {
+        recursive: true,
+        force: true,
+      });
+      await fs.rename(sourcePath, targetPath);
+    } catch (error) {
+      throw new LinaError(LinaErrorType.GITHUB_DOWNLOAD_ERROR, error);
+    } finally {
+      await cloneTmpDir.cleanup();
     }
   }
 }

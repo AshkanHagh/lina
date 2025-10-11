@@ -26,7 +26,7 @@ export const HostTable = pgTable("hosts", (table) => {
     repositoryId: table
       .uuid()
       .notNull()
-      .references(() => RepositoryTable.id),
+      .references(() => RepositoryTable.id, { onDelete: "set null" }),
     userId: table
       .uuid()
       .notNull()

@@ -4,16 +4,19 @@ import path from "node:path";
 import { Dockerignore } from "src/templates/dockerfile-templates/dockerignore";
 import * as Dockerode from "dockerode";
 import { DockerConfig, IDockerConfig } from "src/configs/docker.config";
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { DockerFiles } from "src/templates/dockerfile-templates";
 import { writeFile } from "node:fs/promises";
 
 @Injectable()
 export class DockerBuildService {
   private docker: Dockerode;
+  private logger = new Logger(DockerBuildService.name);
 
   constructor(@DockerConfig() private dockerConfig: IDockerConfig) {
     this.docker = new Dockerode({
+      host: this.dockerConfig.host,
+      port: this.dockerConfig.port,
       socketPath: this.dockerConfig.socketPath,
     });
   }
@@ -31,8 +34,8 @@ export class DockerBuildService {
         await this.createDockerFiles(env, repoDir);
       }
 
+      // renaming manually included dockerfiles
       const tarStream = tar.pack(repoDir, {
-        // renaming manually included dockerfiles
         map: (header) => {
           if (header.name === "Dockerfile.tmp") {
             header.name = "Dockerfile";
@@ -45,13 +48,20 @@ export class DockerBuildService {
       });
 
       const stream = await this.docker.buildImage(tarStream, {
-        t: `${imageName}:${commitSha}, ${imageName}:latest`,
+        t: `${imageName}:${commitSha}`,
         dockerfile: dockerfilePath,
+        forcerm: true,
       });
-
       await new Promise((resolve, reject) => {
-        this.docker.modem.followProgress(stream, (err, res) =>
-          err ? reject(err) : resolve(res),
+        this.docker.modem.followProgress(
+          stream,
+          (err, res) => (err ? reject(err) : resolve(res)),
+          (event: unknown) => {
+            this.logger.log({
+              message: "docker image progress",
+              event,
+            });
+          },
         );
       });
     } catch (error) {

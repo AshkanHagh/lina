@@ -12,6 +12,7 @@ export class BuildWorker {
 
   @OnEvent(BUILD_EVENTS.BUILD_AND_PUSH_DOCKER_IMAGE)
   async handleImageBuildAndPush(event: BuildAndPushDockerImage) {
+    this.logger.log(`event: ${BUILD_EVENTS.BUILD_AND_PUSH_DOCKER_IMAGE}`);
     try {
       await this.buildService.BuildAndPushDockerImage(event);
     } catch (error: unknown) {
