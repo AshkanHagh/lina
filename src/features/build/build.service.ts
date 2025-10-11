@@ -41,7 +41,10 @@ export class BuildService implements IBuildService {
         payload.repo.commitSha,
         payload.env,
       );
-      // await this.dockerBuildService.pushImage(payload.host.slug);
+      await this.dockerBuildService.pushImage(
+        payload.imageName,
+        payload.repo.commitSha,
+      );
     } catch (error) {
       await this.buildUtilServide.updateBuildStatus(payload.buildId, {
         status: "RUNNING",

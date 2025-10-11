@@ -8,8 +8,8 @@ export const dockerConfig = registerAs("docker", () => {
     host: process.env.DOCKER_HOST,
     port: process.env.DOCKER_PORT || 2375,
     registry: {
-      name: process.env.DOCKER_REGISTRY_NAME,
       url: process.env.DOCKER_REGISTRY_URL,
+      host: process.env.DOCKER_REGISTRY_HOST,
       username: process.env.DOCKER_REGISTRY_USERNAME,
       password: process.env.DOCKER_REGISTRY_PASSWORD,
     },

@@ -69,15 +69,14 @@ export class DockerBuildService {
     }
   }
 
-  async pushImage(imageName: string) {
+  async pushImage(name: string, tag: string) {
     try {
+      const imageName = `${name}:${tag}`;
+      const repo = `${this.dockerConfig.registry.host}/${this.dockerConfig.registry.username}/${name}`;
+      const fullRegistryTag = `${repo}:${tag}`;
+
       const image = this.docker.getImage(imageName);
-
-      const [name, tag] = imageName.split(":");
-      const registeryImageName = `${this.dockerConfig.registry.url}/${this.dockerConfig.registry.username}/${name}`;
-      const fullRegistryTag = `${registeryImageName}/${tag}`;
-
-      await image.tag({ repo: registeryImageName, tag });
+      await image.tag({ repo, tag });
       const taggedImage = this.docker.getImage(fullRegistryTag);
 
       const stream = await taggedImage.push({
@@ -89,8 +88,15 @@ export class DockerBuildService {
       });
 
       await new Promise((resolve, reject) => {
-        this.docker.modem.followProgress(stream, (err, res) =>
-          err ? reject(err) : resolve(res),
+        this.docker.modem.followProgress(
+          stream,
+          (err, res) => (err ? reject(err) : resolve(res)),
+          (event: unknown) => {
+            this.logger.log({
+              message: "docker push progress",
+              event,
+            });
+          },
         );
       });
     } catch (error) {
