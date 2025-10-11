@@ -14,39 +14,30 @@ export class DockerBuildService {
 
   constructor(@DockerConfig() private dockerConfig: IDockerConfig) {
     this.docker = new Dockerode({
-      host: this.dockerConfig.host,
-      port: this.dockerConfig.port,
+      socketPath: this.dockerConfig.socketPath,
     });
   }
 
-  async buildImage(tmpPath: string, imageName: string, env: string) {
+  async buildImage(
+    repoDir: string,
+    dockerfilePath: string,
+    imageName: string,
+    commitSha: string,
+    env: string,
+  ) {
     try {
-      await this.createDockerFiles(env, tmpPath);
+      // only write docker files when no dockerfile provided
+      if (env !== "docker") {
+        await this.createDockerFiles(env, repoDir);
+      }
 
-      const tarStream = tar.pack(tmpPath, {
-        ignore: (name) => {
-          const relativePath = path.relative(tmpPath, name);
-          const ignorePatterns = Dockerignore.split("\n");
-
-          return ignorePatterns.some((pattern) => {
-            if (!pattern || pattern.startsWith("#")) {
-              return false;
-            }
-
-            if (pattern.endsWith("*")) {
-              return relativePath.startsWith(pattern.slice(0, -1));
-            }
-
-            return (
-              relativePath === pattern || relativePath.startsWith(pattern + "/")
-            );
-          });
-        },
+      const tarStream = tar.pack(repoDir, {
+        // renaming manually included dockerfiles
         map: (header) => {
-          if (header.name === "Dockerfile.generated") {
+          if (header.name === "Dockerfile.tmp") {
             header.name = "Dockerfile";
           }
-          if (header.name === ".dockerignore.generated") {
+          if (header.name === ".dockerignore.tmp") {
             header.name = ".dockerignore";
           }
           return header;
@@ -54,8 +45,8 @@ export class DockerBuildService {
       });
 
       const stream = await this.docker.buildImage(tarStream, {
-        t: `${imageName}:latest`,
-        dockerfile: "Dockerfile",
+        t: `${imageName}:${commitSha}, ${imageName}:latest`,
+        dockerfile: dockerfilePath,
       });
 
       await new Promise((resolve, reject) => {
@@ -72,8 +63,7 @@ export class DockerBuildService {
     try {
       const image = this.docker.getImage(imageName);
 
-      const name = imageName.split(":")[0];
-      const tag = imageName.split(":")[1];
+      const [name, tag] = imageName.split(":");
       const registeryImageName = `${this.dockerConfig.registry.url}/${this.dockerConfig.registry.username}/${name}`;
       const fullRegistryTag = `${registeryImageName}/${tag}`;
 
@@ -99,8 +89,8 @@ export class DockerBuildService {
   }
 
   private async createDockerFiles(env: string, tmpPath: string) {
-    const dockerfilePath = path.join(tmpPath, "Dockerfile.generated");
-    const dockerignorePath = path.join(tmpPath, ".dockerignore.generated");
+    const dockerfilePath = path.join(tmpPath, "Dockerfile.tmp");
+    const dockerignorePath = path.join(tmpPath, ".dockerignore.tmp");
 
     const dockerfileContent = DockerFiles[env];
 

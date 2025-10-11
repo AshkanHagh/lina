@@ -1,16 +1,15 @@
-import {
-  IOAuthAccount,
-  Repository,
-  IRepositoryBranch,
-  IHost,
-} from "src/drizzle/schemas";
-
 export type BuildAndPushDockerImage = {
-  installationId: number;
-  repo: Repository & {
-    owner: IOAuthAccount;
+  buildId: string;
+  repo: {
+    id: string;
+    owner: string;
+    name: string;
+    path: string;
+    branch: string;
+    commitSha: string;
   };
-  branche: IRepositoryBranch;
+  installationId: number;
   env: string;
-  host: IHost;
+  imageName: string;
+  dockerfilePath?: string;
 };

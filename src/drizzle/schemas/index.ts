@@ -11,3 +11,4 @@ export * from "./repository-branch.schema";
 export * from "./env.schema";
 export * from "./host-env.schema";
 export * from "./host.schema";
+export * from "./build.schema";

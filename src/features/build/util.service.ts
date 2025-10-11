@@ -1,13 +1,16 @@
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
-import { GithubAppService } from "../github/util-services/github-app.service";
-import path from "node:path";
-import fs from "node:fs/promises";
-import { Logger } from "@nestjs/common";
+import * as path from "node:path";
+import * as fs from "node:fs/promises";
+import { Inject, Logger } from "@nestjs/common";
+import { DATABASE } from "src/drizzle/constants";
+import { Database } from "src/drizzle/types";
+import { BuildTable, IBuildInsertForm } from "src/drizzle/schemas";
+import { eq } from "drizzle-orm";
 
 export class BuildUtilService {
   private logger = new Logger(BuildUtilService.name);
 
-  constructor(private githubAppService: GithubAppService) {}
+  constructor(@Inject(DATABASE) private db: Database) {}
 
   async downloadContents(
     octokit: Octokit,
@@ -40,5 +43,13 @@ export class BuildUtilService {
         await this.downloadContents(octokit, dirContents, itemPath, repo);
       }
     }
+  }
+
+  async updateBuildStatus(buildId: string, form: Partial<IBuildInsertForm>) {
+    await this.db
+      .update(BuildTable)
+      .set(form)
+      .where(eq(BuildTable.id, buildId))
+      .execute();
   }
 }

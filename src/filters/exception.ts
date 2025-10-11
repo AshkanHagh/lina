@@ -27,6 +27,7 @@ export enum LinaErrorType {
   GITHUB_DOWNLOAD_ERROR = "GITHUB_DOWNLOAD_ERROR",
   PERMISSION_DENIED = "PERMISSION_DENIED",
   DOCKER_BUILD_ERROR = "DOCKER_BUILD_ERROR",
+  FORBIDDEN = "FORBIDDEN",
 }
 
 export class LinaError extends HttpException {

@@ -11,6 +11,7 @@ export const RepositoryBranchTable = pgTable("repository_branches", (table) => {
       .notNull()
       .references(() => RepositoryTable.id, { onDelete: "cascade" }),
     name: table.varchar({ length: 255 }).notNull(),
+    commitSha: table.varchar({ length: 8 }).notNull(),
     isDefault: table.boolean().notNull(),
     createdAt,
     updatedAt,

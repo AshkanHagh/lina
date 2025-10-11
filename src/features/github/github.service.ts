@@ -44,9 +44,11 @@ export class GithubService implements IGithubService {
     return `https://github.com/apps/${this.githubConfig.appSlug}/installations/new?state=${encodeURIComponent(state)}`;
   }
 
-  // Handles GitHub app installation or update. Adds selected repositories to the database
-  // for new installations and updates the installation ID. For updates, replaces existing
-  // repositories with the new selection.
+  /*
+    Handles GitHub app installation or update. Adds selected repositories to the database
+    for new installations and updates the installation ID. For updates, replaces existing
+    repositories with the new selection.
+  */
   async installationCallback(payload: InstallationCallbackPayload) {
     const [state] = await this.db
       .select()
@@ -61,7 +63,10 @@ export class GithubService implements IGithubService {
       throw new LinaError(LinaErrorType.NOT_FOUND, "STATE_NOT_FOUND");
     }
 
-    // get user available repositories with branches
+    /*
+      get user repositories
+      get user repositories branches and branches latest commit sha
+    */
     const octokit = await this.githubAppService.createRestClient(
       payload.installation_id,
     );
@@ -73,13 +78,35 @@ export class GithubService implements IGithubService {
           owner: repo.owner.login,
           defaultBranch: repo.default_branch,
         });
+
+        const branchesWithCommit = await Promise.all(
+          branches.map(async (branch) => {
+            const { data: repoCommits } = await octokit.repos.listCommits({
+              owner: repo.owner.login,
+              repo: repo.name,
+              per_page: 1,
+              sha: branch.name,
+            });
+            const latestCommitSha = repoCommits[0].sha.slice(0, 7);
+            return {
+              ...branch,
+              commitSha: latestCommitSha,
+            };
+          }),
+        );
+
         return {
           ...repo,
-          branches,
+          branches: branchesWithCommit,
         };
       }),
     );
 
+    /*
+      Handles GitHub app installation or update. Adds selected repositories to the database
+      for new installations and updates the installation ID. For updates, replaces existing
+      repositories with the new selection.
+    */
     await this.db.transaction(async (tx) => {
       await tx
         .delete(GithubAppStateTable)

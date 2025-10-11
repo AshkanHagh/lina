@@ -1,3 +1,4 @@
+import { IHost } from "src/drizzle/schemas";
 import { StartAppDeploymentDto } from "../dtos";
 
 export interface IOrchestrationController {
@@ -5,5 +6,5 @@ export interface IOrchestrationController {
     userId: string,
     repositoryId: string,
     payload: StartAppDeploymentDto,
-  ): Promise<void>;
+  ): Promise<IHost>;
 }

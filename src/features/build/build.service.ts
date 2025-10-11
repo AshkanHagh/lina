@@ -16,17 +16,20 @@ export class BuildService implements IBuildService {
   ) {}
 
   async BuildAndPushDockerImage(payload: BuildAndPushDockerImage) {
+    await this.buildUtilServide.updateBuildStatus(payload.buildId, {
+      status: "RUNNING",
+    });
+
     const octokit = await this.githubAppService.createRestClient(
       payload.installationId,
     );
-
     const tmpDir = await tmp.dir({ unsafeCleanup: true });
     try {
       const { data: repoContent } = await octokit.repos.getContent({
-        owner: payload.repo.owner.login,
+        owner: payload.repo.owner,
         repo: payload.repo.name,
-        path: payload.host.rootDir,
-        ref: payload.branche.name,
+        path: payload.repo.path,
+        ref: payload.repo.branch,
       });
 
       await this.buildUtilServide.downloadContents(
@@ -34,23 +37,34 @@ export class BuildService implements IBuildService {
         repoContent,
         tmpDir.path,
         {
-          owner: payload.repo.owner.login,
+          owner: payload.repo.owner,
           repo: payload.repo.name,
-          path: payload.host.rootDir,
-          ref: payload.branche.name,
+          path: payload.repo.path,
+          ref: payload.repo.branch,
         },
       );
 
       await this.dockerBuildService.buildImage(
         tmpDir.path,
-        payload.host.slug,
+        payload.dockerfilePath || "Dockerfile",
+        payload.imageName,
+        payload.repo.commitSha,
         payload.env,
       );
-      await this.dockerBuildService.pushImage(payload.host.slug);
+      // await this.dockerBuildService.pushImage(payload.host.slug);
     } catch (error) {
+      await this.buildUtilServide.updateBuildStatus(payload.buildId, {
+        status: "RUNNING",
+        // eslint-disable-next-line
+        error: error.message,
+      });
       throw new LinaError(LinaErrorType.GITHUB_DOWNLOAD_ERROR, error);
     } finally {
       await tmpDir.cleanup();
     }
+
+    await this.buildUtilServide.updateBuildStatus(payload.buildId, {
+      status: "COMPLETED",
+    });
   }
 }

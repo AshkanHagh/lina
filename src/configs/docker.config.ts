@@ -3,6 +3,8 @@ import { ConfigType, registerAs } from "@nestjs/config";
 
 export const dockerConfig = registerAs("docker", () => {
   return {
+    socketPath: process.env.DOCKER_SOCKET_PATH,
+    isLocal: process.env.DOCKER_IS_LOCAL === "true",
     host: process.env.DOCKER_HOST,
     port: process.env.DOCKER_PORT || 2375,
     registry: {

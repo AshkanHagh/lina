@@ -6,6 +6,7 @@ import { HostEnvTable } from "./host-env.schema";
 import { relations } from "drizzle-orm";
 import { EnvTable } from "./env.schema";
 import { AUTO_DEPLOY_TRIGGER } from "../constants";
+import { BuildTable } from "./build.schema";
 
 export const HostStatesEnum = pgEnum("host_states", [
   "pending",
@@ -41,12 +42,12 @@ export const HostTable = pgTable("hosts", (table) => {
     buildCommand: table.varchar({ length: 255 }),
     startCommand: table.varchar({ length: 255 }),
     autoDeploy: table.boolean().notNull(),
-    baseDir: table.varchar({ length: 255 }).notNull(),
     dockerCommand: table.varchar({ length: 255 }),
     dockerfilePath: table.varchar({ length: 255 }),
     rootDir: table.varchar({ length: 255 }).notNull(),
     state: HostStatesEnum().notNull().default("pending"),
     healthCheckUrl: table.varchar({ length: 255 }),
+    healthCheckHost: table.varchar({ length: 255 }),
     port: table.integer().notNull(),
     autoDeployTrigger: HostAutoDeployTriggerEnum()
       .notNull()
@@ -74,4 +75,5 @@ export const HostRelations = relations(HostTable, ({ one, many }) => ({
     references: [EnvTable.id],
   }),
   hostEnv: many(HostEnvTable),
+  builds: many(BuildTable),
 }));
