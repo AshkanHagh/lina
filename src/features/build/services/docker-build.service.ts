@@ -26,7 +26,7 @@ export class DockerBuildService {
     repoDir: string,
     env: AppEnv,
     imageName: string,
-    commitSha: string,
+    imageTag: string,
     installCommand?: string,
     buildCommand?: string,
     startCommand?: string,
@@ -58,7 +58,7 @@ export class DockerBuildService {
           buildCommand,
           startCommand,
         ),
-        t: `${imageName}:${commitSha}`,
+        t: `${imageName}:${imageTag}`,
         dockerfile: dockerfilePath,
       });
       await new Promise((resolve, reject) => {

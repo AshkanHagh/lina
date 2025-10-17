@@ -35,20 +35,20 @@ export class BuildService implements IBuildService {
         payload.repo.path,
       );
 
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const imageTag = `${payload.repo.commitSha}-${timestamp}`;
+
       await this.dockerBuildService.buildImage(
         tmpDir.path,
         payload.env,
         payload.imageName,
-        payload.repo.commitSha,
+        imageTag,
         payload.installCommand,
         payload.buildCommand,
         payload.startCommand,
         payload.dockerfilePath || "Dockerfile",
       );
-      await this.dockerBuildService.pushImage(
-        payload.imageName,
-        payload.repo.commitSha,
-      );
+      await this.dockerBuildService.pushImage(payload.imageName, imageTag);
     } catch (error) {
       await this.buildUtilServide.updateBuildStatus(payload.buildId, {
         status: "RUNNING",
