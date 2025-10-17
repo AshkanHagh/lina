@@ -1,11 +1,6 @@
-export const EnvDatasets = [
-  {
-    name: "rust",
-    slug: "Rust",
-    language: "Rust",
-    sampleBuildCommand: "cargo build --release",
-    sampleStartCommand: "cargo run --release",
-  },
+import { IEnvInsertForm } from "src/drizzle/schemas";
+
+export const EnvDatasets: IEnvInsertForm[] = [
   {
     name: "node",
     slug: "Node",

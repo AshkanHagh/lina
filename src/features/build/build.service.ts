@@ -6,6 +6,7 @@ import { LinaError, LinaErrorType } from "src/filters/exception";
 import { BuildUtilService } from "./util.service";
 import * as tmp from "tmp-promise";
 import { DockerBuildService } from "./services/docker-build.service";
+import { parseError } from "src/utils/error-parser";
 
 @Injectable()
 export class BuildService implements IBuildService {
@@ -36,10 +37,13 @@ export class BuildService implements IBuildService {
 
       await this.dockerBuildService.buildImage(
         tmpDir.path,
-        payload.dockerfilePath || "Dockerfile",
+        payload.env,
         payload.imageName,
         payload.repo.commitSha,
-        payload.env,
+        payload.installCommand,
+        payload.buildCommand,
+        payload.startCommand,
+        payload.dockerfilePath || "Dockerfile",
       );
       await this.dockerBuildService.pushImage(
         payload.imageName,
@@ -48,8 +52,7 @@ export class BuildService implements IBuildService {
     } catch (error) {
       await this.buildUtilServide.updateBuildStatus(payload.buildId, {
         status: "RUNNING",
-        // eslint-disable-next-line
-        error: error.message,
+        error: parseError(error),
       });
       throw new LinaError(LinaErrorType.DOCKER_BUILD_ERROR, error);
     } finally {

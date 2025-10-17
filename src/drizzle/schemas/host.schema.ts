@@ -39,6 +39,7 @@ export const HostTable = pgTable("hosts", (table) => {
     slug: table.varchar({ length: 255 }).notNull(),
     includedPath: table.text().array(),
     ignoredPaths: table.text().array(),
+    installCommand: table.varchar({ length: 255 }),
     buildCommand: table.varchar({ length: 255 }),
     startCommand: table.varchar({ length: 255 }),
     autoDeploy: table.boolean().notNull(),

@@ -6,6 +6,7 @@ const StartAppDeploymentSchema = z.object({
   envId: z.uuid(),
   branchId: z.uuid(),
   name: z.string().max(255),
+  installCommand: z.string().optional(),
   buildCommand: z.string().optional(),
   startCommand: z.string().optional(),
   dockerfilePath: z.string().optional(),

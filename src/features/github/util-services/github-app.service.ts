@@ -60,6 +60,8 @@ export class GithubAppService {
     }
   }
 
+  // Clones a GitHub repository to a temporary folder,
+  // moves the specified root directory to the target path, and cleans up.
   async cloneRepo(
     installationId: number,
     repo: string,
@@ -89,17 +91,20 @@ export class GithubAppService {
         maxBuffer: 1024 * 1024 * 300,
       });
 
-      const sourcePath = path.join(cloneTmpDir.path, rootDir);
-
       await fs.rm(path.join(cloneTmpDir.path, ".git"), {
         recursive: true,
         force: true,
       });
+
+      const sourcePath = path.join(cloneTmpDir.path, rootDir);
       await fs.rename(sourcePath, targetPath);
     } catch (error) {
       throw new LinaError(LinaErrorType.GITHUB_DOWNLOAD_ERROR, error);
     } finally {
-      await cloneTmpDir.cleanup();
+      // Skip cleaning temp folder if rootDir is "/". The rename method deletes it otherwise.
+      if (rootDir !== "/") {
+        await cloneTmpDir.cleanup();
+      }
     }
   }
 }

@@ -1,12 +1,13 @@
 import { LinaError, LinaErrorType } from "src/filters/exception";
 import * as tar from "tar-fs";
-import path from "node:path";
-import { Dockerignore } from "src/templates/dockerfile-templates/dockerignore";
+import * as path from "node:path";
+import { Dockerignore } from "src/templates/docker/dockerignore";
 import * as Dockerode from "dockerode";
 import { DockerConfig, IDockerConfig } from "src/configs/docker.config";
 import { Injectable, Logger } from "@nestjs/common";
-import { DockerFiles } from "src/templates/dockerfile-templates";
 import { writeFile } from "node:fs/promises";
+import { execSync } from "node:child_process";
+import { AppEnv } from "src/drizzle/schemas";
 
 @Injectable()
 export class DockerBuildService {
@@ -23,34 +24,43 @@ export class DockerBuildService {
 
   async buildImage(
     repoDir: string,
-    dockerfilePath: string,
+    env: AppEnv,
     imageName: string,
     commitSha: string,
-    env: string,
+    installCommand?: string,
+    buildCommand?: string,
+    startCommand?: string,
+    dockerfilePath?: string,
   ) {
     try {
       // only write docker files when no dockerfile provided
       if (env !== "docker") {
-        await this.createDockerFiles(env, repoDir);
+        await this.createDockerFiles(repoDir);
       }
 
       // renaming manually included dockerfiles
       const tarStream = tar.pack(repoDir, {
         map: (header) => {
-          if (header.name === "Dockerfile.tmp") {
-            header.name = "Dockerfile";
+          if (
+            header.name === "Dockerfile.tmp" ||
+            header.name === ".dockerignore.tmp"
+          ) {
+            header.name = header.name.replace(".tmp", "");
           }
-          if (header.name === ".dockerignore.tmp") {
-            header.name = ".dockerignore";
-          }
+          console.log(header.name);
           return header;
         },
       });
 
       const stream = await this.docker.buildImage(tarStream, {
+        buildargs: this.buildDockerfileArgs(
+          env,
+          installCommand,
+          buildCommand,
+          startCommand,
+        ),
         t: `${imageName}:${commitSha}`,
         dockerfile: dockerfilePath,
-        forcerm: true,
       });
       await new Promise((resolve, reject) => {
         this.docker.modem.followProgress(
@@ -104,13 +114,47 @@ export class DockerBuildService {
     }
   }
 
-  private async createDockerFiles(env: string, tmpPath: string) {
-    const dockerfilePath = path.join(tmpPath, "Dockerfile.tmp");
-    const dockerignorePath = path.join(tmpPath, ".dockerignore.tmp");
+  private async createDockerFiles(repoPath: string) {
+    try {
+      const command = `new-dockerfile > ${repoPath}/Dockerfile.tmp`;
+      execSync(command, {
+        stdio: "inherit",
+      });
 
-    const dockerfileContent = DockerFiles[env];
+      const dockerignorePath = path.join(repoPath, ".dockerignore.tmp");
+      await writeFile(dockerignorePath, Dockerignore);
+    } catch (error) {
+      throw new LinaError(LinaErrorType.DOCKER_BUILD_ERROR, error);
+    }
+  }
 
-    await writeFile(dockerfilePath, dockerfileContent);
-    await writeFile(dockerignorePath, Dockerignore);
+  private buildDockerfileArgs(
+    env: AppEnv,
+    installCommand?: string,
+    buildCommand?: string,
+    startCommand?: string,
+  ) {
+    // new-dockerfile dockerfile args for each env
+    const args: Record<AppEnv, Record<string, string | undefined>> = {
+      // ignore because we use user dockerfile
+      docker: {},
+      node: {
+        ["BUILDER"]: "registry.docker.ir/node",
+        ["INSTALL_CMD"]: installCommand,
+        ["BUILD_CMD"]: buildCommand,
+        ["START_CMD"]: startCommand,
+      },
+    };
+
+    const result = args[env];
+    const filteredResult: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(result)) {
+      if (value !== undefined) {
+        filteredResult[key] = value;
+      }
+    }
+
+    return filteredResult;
   }
 }

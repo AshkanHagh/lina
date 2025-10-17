@@ -1,3 +1,5 @@
+import { AppEnv } from "src/drizzle/schemas";
+
 export type BuildAndPushDockerImage = {
   buildId: string;
   repo: {
@@ -9,7 +11,10 @@ export type BuildAndPushDockerImage = {
     commitSha: string;
   };
   installationId: number;
-  env: string;
+  env: AppEnv;
   imageName: string;
   dockerfilePath?: string;
+  installCommand?: string;
+  buildCommand?: string;
+  startCommand?: string;
 };

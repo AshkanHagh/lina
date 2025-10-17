@@ -6,7 +6,7 @@ RUN apt-get install -y \
   openssh-server
 
 # Install ca-certificates and set up Docker's APT repository
-RUN apt-get install -y ca-certificates curl gnupg lsb-release && \
+RUN apt-get install -y git ca-certificates curl gnupg lsb-release && \
   install -m 0755 -d /etc/apt/keyrings && \
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
   chmod a+r /etc/apt/keyrings/docker.asc && \
@@ -15,6 +15,9 @@ RUN apt-get install -y ca-certificates curl gnupg lsb-release && \
   apt-get update
 
 RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# install new-dockerfile for auto generating dockerfiles
+RUN curl -fsSL https://flexstack.com/install/new-dockerfile | bash
 
 # Set up SSH
 RUN mkdir /var/run/sshd && \

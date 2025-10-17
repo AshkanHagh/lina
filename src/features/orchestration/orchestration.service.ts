@@ -112,6 +112,10 @@ export class OrchestrationService implements IOrchestrationService {
           owner: repo.owner.login,
           path: payload.rootDir,
         },
+        installCommand: payload.installCommand,
+        buildCommand: payload.buildCommand,
+        startCommand: payload.startCommand,
+        dockerfilePath: payload.dockerfilePath,
       };
       this.eventEmitter.emit(
         BUILD_EVENTS.BUILD_AND_PUSH_DOCKER_IMAGE,
