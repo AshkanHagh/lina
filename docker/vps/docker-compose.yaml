@@ -1,0 +1,14 @@
+services:
+  dev-vps:
+    build: .
+    container_name: dev-vps
+    privileged: true
+    ports:
+      - "2222:22"
+    volumes:
+      - dev-vps-data:/home/lina
+      - docker-data:/var/lib/docker
+
+volumes:
+  dev-vps-data:
+  docker-data:

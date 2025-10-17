@@ -54,8 +54,10 @@ export class WebhooksService implements IWebhooksService, OnModuleInit {
 
     // get the installation's repositories and filter by the added repositories
     const repoIds = event.payload.repositories_added.map((repo) => repo.id);
+    const octokit =
+      await this.githubAppService.createRestClient(installationId);
     const availableRepos =
-      await this.githubAppService.getInstallationRepos(installationId);
+      await this.githubAppService.getInstallationRepos(octokit);
     const addedReposFullDetail = availableRepos.filter((repo) =>
       repoIds.includes(repo.id),
     );
