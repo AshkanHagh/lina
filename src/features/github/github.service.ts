@@ -12,15 +12,15 @@ import {
 import { InstallationCallbackPayload } from "./dto";
 import { eq } from "drizzle-orm";
 import { LinaError, LinaErrorType } from "src/filters/exception";
-import { GithubAppService } from "./util-services/github-app.service";
 import { GithubAppStateTable } from "src/drizzle/schemas/github-app-state.schema";
+import { GithubUtilService } from "./util-services/util.service";
 
 @Injectable()
 export class GithubService implements IGithubService {
   constructor(
     @GithubConfig() private githubConfig: IGithubConfig,
     @Inject(DATABASE) private db: Database,
-    private githubAppService: GithubAppService,
+    private githubUtilService: GithubUtilService,
   ) {}
 
   async generateInstallationUrl(userId: string) {
@@ -46,12 +46,15 @@ export class GithubService implements IGithubService {
 
   /*
     Handles GitHub app installation or update. Adds selected repositories to the database
-    for new installations and updates the installation ID. For updates, replaces existing
-    repositories with the new selection.
+    and updates the installation ID for new installations. For updates, removes only repositories
+    whose permissions have been revoked and adds new ones.
   */
   async installationCallback(payload: InstallationCallbackPayload) {
     const [state] = await this.db
-      .select()
+      .select({
+        githubAppState: GithubAppStateTable,
+        user: OAuthAccountTable,
+      })
       .from(GithubAppStateTable)
       .innerJoin(
         OAuthAccountTable,
@@ -63,96 +66,79 @@ export class GithubService implements IGithubService {
       throw new LinaError(LinaErrorType.NOT_FOUND, "STATE_NOT_FOUND");
     }
 
-    /*
-      get user repositories
-      get user repositories branches and branches latest commit sha
-    */
-    const octokit = await this.githubAppService.createRestClient(
+    const installationRepos = await this.githubUtilService.getInstallationRepos(
       payload.installation_id,
     );
-    const repos = await this.githubAppService.getInstallationRepos(octokit);
-    const reposWithBranches = await Promise.all(
-      repos.map(async (repo) => {
-        const branches = await this.githubAppService.getReposBranches(octokit, {
-          name: repo.name,
-          owner: repo.owner.login,
-          defaultBranch: repo.default_branch,
-        });
 
-        const branchesWithCommit = await Promise.all(
-          branches.map(async (branch) => {
-            const { data: repoCommits } = await octokit.repos.listCommits({
-              owner: repo.owner.login,
-              repo: repo.name,
-              per_page: 1,
-              sha: branch.name,
-            });
-            const latestCommitSha = repoCommits[0].sha.slice(0, 7);
-            return {
-              ...branch,
-              commitSha: latestCommitSha,
-            };
-          }),
-        );
+    const existingRepos = await this.db
+      .select()
+      .from(RepositoryTable)
+      .where(eq(RepositoryTable.ownerId, state.user.id));
 
-        return {
-          ...repo,
-          branches: branchesWithCommit,
-        };
-      }),
+    const reposToAdd = installationRepos.filter((iRepo) =>
+      existingRepos.every((xRepo) => xRepo.providerId !== iRepo.id),
+    );
+    const reposToRemove = existingRepos.filter((xRepo) =>
+      installationRepos.every((iRepo) => iRepo.id !== xRepo.providerId),
     );
 
     /*
-      Handles GitHub app installation or update. Adds selected repositories to the database
-      for new installations and updates the installation ID. For updates, replaces existing
-      repositories with the new selection.
+      Adds selected repositories to the database
+      and updates the installation ID for new installations.
+      For updates, removes only repositories whose permissions have been revoked and adds new ones.
     */
     await this.db.transaction(async (tx) => {
       await tx
         .delete(GithubAppStateTable)
-        .where(eq(GithubAppStateTable.id, state.github_app_states.id))
+        .where(eq(GithubAppStateTable.id, state.githubAppState.id))
         .execute();
 
       if (payload.setup_action === "install") {
-        if (state.oauth_accounts.installationId) {
+        if (state.user.installationId) {
           throw new LinaError(LinaErrorType.GITHUB_APP_ALREADY_INSTALLED);
         }
         await tx
           .update(OAuthAccountTable)
           .set({ installationId: payload.installation_id })
-          .where(eq(OAuthAccountTable.id, state.oauth_accounts.id))
+          .where(eq(OAuthAccountTable.id, state.user.id))
           .execute();
       } else if (payload.setup_action === "update") {
-        await tx
-          .delete(RepositoryTable)
-          .where(eq(RepositoryTable.ownerId, state.oauth_accounts.id))
-          .execute();
+        // removes repositories with revoked permissions
+        await Promise.all(
+          reposToRemove.map((repo) => {
+            return tx
+              .delete(RepositoryTable)
+              .where(eq(RepositoryTable.providerId, repo.providerId))
+              .execute();
+          }),
+        );
       }
 
       // insert repos and repos branches
-      await Promise.all(
-        reposWithBranches.map(async (repo) => {
-          const [repoResult] = await tx
-            .insert(RepositoryTable)
-            .values({
-              name: repo.name,
-              fullName: repo.full_name,
-              isPrivate: repo.private,
-              isFork: repo.fork,
-              url: repo.url,
-              ownerId: state.oauth_accounts.id,
-              providerId: repo.id,
-            })
-            .returning({ id: RepositoryTable.id });
+      for (const repo of reposToAdd) {
+        const [repoResult] = await tx
+          .insert(RepositoryTable)
+          .values({
+            name: repo.name,
+            fullName: repo.full_name,
+            isPrivate: repo.private,
+            isFork: repo.fork,
+            url: repo.url,
+            ownerId: state.user.id,
+            providerId: repo.id,
+          })
+          .onConflictDoNothing()
+          .returning({ id: RepositoryTable.id });
 
-          return repo.branches.map(async (branch) => {
+        await Promise.all(
+          repo.branches.map(async (branch) => {
             await tx.insert(RepositoryBranchTable).values({
               repositoryId: repoResult.id,
               ...branch,
             });
-          });
-        }),
-      );
+          }),
+        );
+      }
     });
   }
 }

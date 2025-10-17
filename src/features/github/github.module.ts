@@ -6,6 +6,7 @@ import { GithubAppService } from "./util-services/github-app.service";
 import { WebhooksController } from "./webhooks/webhooks.controller";
 import { WebhooksService } from "./webhooks/webhooks.service";
 import { GithubScheduler } from "./scheduler";
+import { GithubUtilService } from "./util-services/util.service";
 
 @Module({
   imports: [DrizzleModule],
@@ -15,6 +16,7 @@ import { GithubScheduler } from "./scheduler";
     GithubAppService,
     WebhooksService,
     GithubScheduler,
+    GithubUtilService,
   ],
   exports: [GithubAppService],
 })

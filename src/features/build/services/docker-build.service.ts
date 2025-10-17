@@ -47,7 +47,6 @@ export class DockerBuildService {
           ) {
             header.name = header.name.replace(".tmp", "");
           }
-          console.log(header.name);
           return header;
         },
       });
