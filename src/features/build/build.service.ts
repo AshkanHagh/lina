@@ -53,6 +53,7 @@ export class BuildService implements IBuildService {
       await this.buildUtilServide.updateBuildStatus(payload.buildId, {
         status: "RUNNING",
         error: parseError(error),
+        endTime: new Date(),
       });
       throw new LinaError(LinaErrorType.DOCKER_BUILD_ERROR, error);
     } finally {
@@ -61,6 +62,7 @@ export class BuildService implements IBuildService {
 
     await this.buildUtilServide.updateBuildStatus(payload.buildId, {
       status: "COMPLETED",
+      endTime: new Date(),
     });
   }
 }
