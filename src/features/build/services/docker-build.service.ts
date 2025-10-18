@@ -60,6 +60,7 @@ export class DockerBuildService {
         ),
         t: `${imageName}:${imageTag}`,
         dockerfile: dockerfilePath,
+        nocache: true,
       });
       await new Promise((resolve, reject) => {
         this.docker.modem.followProgress(
@@ -115,8 +116,9 @@ export class DockerBuildService {
 
   private async createDockerFiles(repoPath: string) {
     try {
-      const command = `new-dockerfile > ${repoPath}/Dockerfile.tmp`;
+      const command = `new-dockerfile > Dockerfile.tmp`;
       execSync(command, {
+        cwd: repoPath,
         stdio: "inherit",
       });
 
@@ -138,7 +140,6 @@ export class DockerBuildService {
       // ignore because we use user dockerfile
       docker: {},
       node: {
-        ["BUILDER"]: "registry.docker.ir/node",
         ["INSTALL_CMD"]: installCommand,
         ["BUILD_CMD"]: buildCommand,
         ["START_CMD"]: startCommand,

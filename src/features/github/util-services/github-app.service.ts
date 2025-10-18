@@ -85,26 +85,28 @@ export class GithubAppService {
       });
 
       const cloneUrl = `https://x-access-token:${token}@github.com/${owner}/${repo}.git`;
-      const cloneCommand = `git clone --depth 1 --branch ${branch} --single-branch ${cloneUrl} ${cloneTmpDir.path}`;
+      /*
+        Includes the repo name in the clone destination path to prevent the `fs.rename` method
+        from moving and deleting the entire folder when `rootDir` is "/".
+      */
+      const cloneDestPath = path.join(cloneTmpDir.path, repo);
+      const cloneCommand = `git clone --depth 1 --branch ${branch} --single-branch ${cloneUrl} ${cloneDestPath}`;
       execSync(cloneCommand, {
         stdio: "pipe",
         maxBuffer: 1024 * 1024 * 300,
       });
 
-      await fs.rm(path.join(cloneTmpDir.path, ".git"), {
+      await fs.rm(path.join(cloneDestPath, ".git"), {
         recursive: true,
         force: true,
       });
 
-      const sourcePath = path.join(cloneTmpDir.path, rootDir);
+      const sourcePath = path.join(cloneDestPath, rootDir);
       await fs.rename(sourcePath, targetPath);
     } catch (error) {
       throw new LinaError(LinaErrorType.GITHUB_DOWNLOAD_ERROR, error);
     } finally {
-      // Skip cleaning temp folder if rootDir is "/". The rename method deletes it otherwise.
-      if (rootDir !== "/") {
-        await cloneTmpDir.cleanup();
-      }
+      await cloneTmpDir.cleanup();
     }
   }
 }
