@@ -18,3 +18,13 @@ export type BuildAndPushDockerImage = {
   buildCommand?: string;
   startCommand?: string;
 };
+
+export interface DockerStream {
+  stream?: string;
+  error?: string;
+  status?: string;
+  progress?: string;
+  id?: string;
+  aux?: any;
+  [key: string]: any;
+}

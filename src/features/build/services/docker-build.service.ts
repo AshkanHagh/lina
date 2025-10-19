@@ -8,6 +8,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { writeFile } from "node:fs/promises";
 import { execSync } from "node:child_process";
 import { AppEnv } from "src/drizzle/schemas";
+import { DockerStream } from "../types/types";
 
 @Injectable()
 export class DockerBuildService {
@@ -60,18 +61,14 @@ export class DockerBuildService {
         ),
         t: `${imageName}:${imageTag}`,
         dockerfile: dockerfilePath,
-        nocache: true,
+        // nocache: true,
       });
       await new Promise((resolve, reject) => {
         this.docker.modem.followProgress(
           stream,
           (err, res) => (err ? reject(err) : resolve(res)),
-          (event: unknown) => {
-            this.logger.log({
-              message: "docker image progress",
-              event,
-            });
-          },
+          (event: DockerStream) =>
+            process.stdout.write(event.stream || event.error || ""),
         );
       });
     } catch (error) {
@@ -101,11 +98,16 @@ export class DockerBuildService {
         this.docker.modem.followProgress(
           stream,
           (err, res) => (err ? reject(err) : resolve(res)),
-          (event: unknown) => {
-            this.logger.log({
-              message: "docker push progress",
-              event,
-            });
+          (event: DockerStream) => {
+            if (event.status && !event.progress) {
+              process.stdout.write(event.status + "\n");
+            }
+            if (event.progress) {
+              process.stdout.write(event.progress + "\n");
+            }
+            if (event.error) {
+              process.stdout.write(event.error + "\n");
+            }
           },
         );
       });
