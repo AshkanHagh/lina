@@ -67,8 +67,9 @@ export class DockerBuildService {
         this.docker.modem.followProgress(
           stream,
           (err, res) => (err ? reject(err) : resolve(res)),
-          (event: DockerStream) =>
-            process.stdout.write(event.stream || event.error || ""),
+          (event: DockerStream) => {
+            process.stdout.write(JSON.stringify(event) + "\n");
+          },
         );
       });
     } catch (error) {
@@ -99,15 +100,7 @@ export class DockerBuildService {
           stream,
           (err, res) => (err ? reject(err) : resolve(res)),
           (event: DockerStream) => {
-            if (event.status && !event.progress) {
-              process.stdout.write(event.status + "\n");
-            }
-            if (event.progress) {
-              process.stdout.write(event.progress + "\n");
-            }
-            if (event.error) {
-              process.stdout.write(event.error + "\n");
-            }
+            process.stdout.write(JSON.stringify(event) + "\n");
           },
         );
       });
