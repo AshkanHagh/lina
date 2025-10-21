@@ -12,11 +12,7 @@ export const authConfig = registerAs("auth", () => {
       exp: 1000 * 60 * 60 * 24 * 7,
     },
     hashMasterKey: process.env.HASH_MASTER_KEY || "shh",
-    oauth: {
-      id: process.env.GITHUB_CLIENT_ID,
-      secret: process.env.GITHUB_CLIENT_SECRET,
-      redirectUri: process.env.GITHUB_REDIRECT_URI,
-    },
+    passwordRetryLimit: parseInt(process.env.PASSWORD_RETRY_LIMIT || "5"),
   };
 });
 

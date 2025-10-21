@@ -1,56 +1,49 @@
-import { Injectable } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
-import { sign, verify } from "jsonwebtoken";
-import { randomInt } from "node:crypto";
+import { Inject, Injectable } from "@nestjs/common";
+import { sign } from "jsonwebtoken";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
-import {
-  IPendingUser,
-  IUser,
-  IUserInsertForm,
-  UserTable,
-} from "src/drizzle/schemas";
-import { EMAIL_EVENTS } from "src/worker/constants";
-import { VerificationEmail } from "../email/types";
+import { IUser, UserTable } from "src/drizzle/schemas";
 import { LinaError, LinaErrorType } from "src/filters/exception";
 import { Response } from "express";
 import { AUTH_TOKEN_COOKIE_NAME } from "./constants";
-import { getTableColumns } from "drizzle-orm";
+import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
+import { eq } from "drizzle-orm";
+import * as argon2 from "argon2";
 
 @Injectable()
 export class AuthUtilService {
   constructor(
     @AuthConfig() private authConfig: IAuthConfig,
-    private eventEmitter: EventEmitter2,
+    @Inject(DATABASE) private db: Database,
   ) {}
 
-  initiateAccountVerification(pendingUser: Pick<IPendingUser, "id" | "email">) {
-    const code = randomInt(100_000, 999_999);
-    const token = sign(
-      {
-        userId: pendingUser.id,
-        code,
-        exp: Math.floor(Date.now() / 1000 + this.authConfig.verification.exp),
-      },
-      this.authConfig.verification.secret,
-    );
+  async validateLoginUser(email: string, password: string) {
+    const [user] = await this.db
+      .select()
+      .from(UserTable)
+      .where(eq(UserTable.email, email));
 
-    const emailPayload: VerificationEmail = {
-      email: pendingUser.email,
-      verifyCode: code,
-    };
-    this.eventEmitter.emit(EMAIL_EVENTS.SEND_VERIFICATION_EMAIL, emailPayload);
-
-    return token;
-  }
-
-  verifyJwtToken<T>(token: string, secret: string) {
-    try {
-      const result = verify(token, secret);
-      return result as T;
-    } catch (error) {
-      throw new LinaError(LinaErrorType.INVALID_TOKEN, error);
+    if (!user) {
+      throw new LinaError(LinaErrorType.INVALID_EMAIL_OR_PASSWORD);
     }
+
+    const passwordRetryAllowed = this.authConfig.passwordRetryLimit;
+    if (user.passwordRetryCount >= passwordRetryAllowed) {
+      throw new LinaError(LinaErrorType.PASSWORD_RETRY_LIMIT_REACHED);
+    }
+
+    if (!(await argon2.verify(user.passwordHash, password))) {
+      await this.db
+        .update(UserTable)
+        .set({
+          passwordRetryCount: user.passwordRetryCount + 1,
+        })
+        .where(eq(UserTable.id, user.id));
+      throw new LinaError(LinaErrorType.INVALID_EMAIL_OR_PASSWORD);
+    }
+
+    const { passwordHash, ...userWithoutPass } = user;
+    return userWithoutPass;
   }
 
   generateAuthToken(res: Response, user: Pick<IUser, "email" | "id">) {
@@ -70,21 +63,5 @@ export class AuthUtilService {
       secure: process.env.NODE_ENV === "production",
       maxAge: this.authConfig.authToken.exp,
     });
-  }
-
-  async initiateUserAccount(tx: Database, insertForm: IUserInsertForm) {
-    // removing passwordHash row from user table return object
-    // eslint-disable-next-line
-    const { passwordHash, ...userColumns } = getTableColumns(UserTable);
-    const user = await tx
-      .insert(UserTable)
-      .values(insertForm)
-      .returning(userColumns);
-
-    if (insertForm.avatar) {
-      // TODO: upload user avatar to s3
-    }
-    // TODO: insert user initial starting money
-    return user[0];
   }
 }

@@ -1,26 +1,19 @@
 import { Response } from "express";
-import {
-  LoginPayload,
-  RegisterPayload,
-  ResendVerificationCodePayload,
-  VerifyRegisterPayload,
-  VerifyTwoFactorPayload,
-} from "../dto";
+import { LoginPayload, RegisterPayload, VerifyTwoFactorPayload } from "../dto";
 import { IUser } from "src/drizzle/schemas";
 
 export interface IAuthService {
-  register(payload: RegisterPayload): Promise<string>;
-  resendVerificationCode(
-    payload: ResendVerificationCodePayload,
-  ): Promise<string>;
-  verifyRegister(
+  register(
     res: Response,
-    payload: VerifyRegisterPayload,
+    payload: RegisterPayload,
   ): Promise<Omit<IUser, "passwordHash">>;
+
   login(res: Response, payload: LoginPayload): Promise<any>;
+
   setupTwoFactor(
     user: Omit<IUser, "passwordHash">,
   ): Promise<{ secret: string; qrCodeUrl: string }>;
+
   verifyTwoFactor(
     user: Omit<IUser, "passwordHash">,
     payload: VerifyTwoFactorPayload,

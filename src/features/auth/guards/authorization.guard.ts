@@ -22,32 +22,28 @@ export class AuthorizationGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const skipAuth = this.reflector.get<boolean>(
-      "skip-auth",
-      context.getHandler(),
-    );
-    if (skipAuth) {
+    if (this.reflector.get<boolean>("skip-auth", context.getHandler())) {
       return true;
     }
 
     const req = context.switchToHttp().getRequest<Request>();
-
     const token = req.cookies[AUTH_TOKEN_COOKIE_NAME] as string | undefined;
     if (!token) {
       throw new LinaError(LinaErrorType.UNAUTHORIZED);
     }
 
-    let tokenPayload: { userId: string };
+    let userId: string;
     try {
-      tokenPayload = verify(token, this.authConfig.authToken.secret) as {
+      const result = verify(token, this.authConfig.authToken.secret) as {
         userId: string;
       };
+      userId = result.userId;
     } catch (error) {
       throw new LinaError(LinaErrorType.INVALID_TOKEN, error);
     }
 
     const user = await this.db.query.UserTable.findFirst({
-      where: (table, funcs) => funcs.eq(table.id, tokenPayload.userId),
+      where: (table, funcs) => funcs.eq(table.id, userId),
       columns: {
         passwordHash: false,
       },

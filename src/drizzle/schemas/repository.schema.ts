@@ -1,6 +1,5 @@
 import { pgTable } from "drizzle-orm/pg-core";
 import { createdAt, id, updatedAt } from "./helpers";
-import { OAuthAccountTable } from "./oauth-account.schema";
 import { relations } from "drizzle-orm";
 import { RepositoryBranchTable } from "./repository-branch.schema";
 import { HostTable } from "./host.schema";

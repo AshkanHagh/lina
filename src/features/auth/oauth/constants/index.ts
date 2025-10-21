@@ -1,1 +1,0 @@
-export const OAUTH_STATE_EXP_MINUTES = 10;
