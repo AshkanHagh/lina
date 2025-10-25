@@ -3,7 +3,7 @@ import { AuthService } from "./auth.service";
 import { IAuthController } from "./interfaces/controller";
 import { LoginDto, RegisterDto, VerifyTwoFactorDto } from "./dto";
 import { Response } from "express";
-import { IUser } from "src/drizzle/schemas";
+import { ISanitizedUser } from "src/drizzle/schemas";
 import { AuthorizationGuard } from "./guards/authorization.guard";
 import { User } from "./decorators/user.decorator";
 
@@ -15,7 +15,7 @@ export class AuthController implements IAuthController {
   async register(
     @Res({ passthrough: true }) res: Response,
     @Body() payload: RegisterDto,
-  ): Promise<Omit<IUser, "passwordHash">> {
+  ): Promise<ISanitizedUser> {
     return await this.authService.register(res, payload);
   }
 
@@ -30,18 +30,18 @@ export class AuthController implements IAuthController {
   @Get("/two-factor/setup")
   @UseGuards(AuthorizationGuard)
   async setupTwoFactor(
-    @User() user: IUser,
+    @User("id") userId: string,
   ): Promise<{ secret: string; qrCodeUrl: string }> {
-    return await this.authService.setupTwoFactor(user);
+    return await this.authService.setupTwoFactor(userId);
   }
 
   @Post("/two-factor/verify")
   @UseGuards(AuthorizationGuard)
   async verifyTwoFactor(
-    @User() user: Omit<IUser, "passwordHash">,
+    @User("id") userId: string,
     @Body() payload: VerifyTwoFactorDto,
   ): Promise<{ codes: string[] }> {
-    const codes = await this.authService.verifyTwoFactor(user, payload);
+    const codes = await this.authService.verifyTwoFactor(userId, payload);
     return { codes };
   }
 }

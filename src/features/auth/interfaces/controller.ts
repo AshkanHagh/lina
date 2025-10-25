@@ -1,21 +1,17 @@
-import { IUser } from "src/drizzle/schemas";
+import { ISanitizedUser } from "src/drizzle/schemas";
 import { LoginDto, RegisterDto, VerifyTwoFactorDto } from "../dto";
 import { Response } from "express";
 
 export interface IAuthController {
-  register(
-    res: Response,
-    payload: RegisterDto,
-  ): Promise<Omit<IUser, "passwordHash">>;
+  register(res: Response, payload: RegisterDto): Promise<ISanitizedUser>;
 
   login(res: Response, payload: LoginDto): Promise<any>;
-
   setupTwoFactor(
-    user: Omit<IUser, "passwordHash">,
+    userId: string,
   ): Promise<{ secret: string; qrCodeUrl: string }>;
 
   verifyTwoFactor(
-    user: Omit<IUser, "passwordHash">,
+    userId: string,
     payload: VerifyTwoFactorDto,
   ): Promise<{ codes: string[] }>;
 }

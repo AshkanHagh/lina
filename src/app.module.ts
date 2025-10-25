@@ -5,22 +5,18 @@ import { AuthModule } from "./features/auth/auth.module";
 import { APP_FILTER, APP_PIPE } from "@nestjs/core";
 import { LinaExceptionFilter } from "./filters/exception-filter";
 import { ZodValidationPipe } from "./utils/zod-validation.pipe";
-import { WorkerModule } from "./worker/worker.module";
-import { GithubModule } from "./features/github/github.module";
 import { ScheduleModule } from "@nestjs/schedule";
-import { OrchestrationModule } from "./features/orchestration/orchestration.module";
-import { BuildModule } from "./features/build/build.module";
 
 @Module({
   imports: [
     ConfigsModule.register(),
     DrizzleModule,
     AuthModule,
-    WorkerModule,
-    GithubModule,
+    // WorkerModule,
+    // GithubModule,
     ScheduleModule.forRoot(),
-    OrchestrationModule,
-    BuildModule,
+    // OrchestrationModule,
+    // BuildModule,
   ],
   providers: [
     {

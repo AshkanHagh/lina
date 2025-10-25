@@ -1,12 +1,9 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import { Request } from "express";
-import { IUser } from "src/drizzle/schemas";
+import { AuthUser } from "../types";
 
 export const User = createParamDecorator(
-  (
-    user: keyof Omit<IUser, "passwordHash"> | undefined,
-    ctx: ExecutionContext,
-  ) => {
+  (user: keyof AuthUser | undefined, ctx: ExecutionContext) => {
     const req = ctx.switchToHttp().getRequest<Request>();
     if (!user) {
       return req.user;

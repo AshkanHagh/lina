@@ -4,17 +4,15 @@ import { LoginPayload, RegisterPayload, VerifyTwoFactorPayload } from "./dto";
 import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
 import { LinaError, LinaErrorType } from "src/filters/exception";
-import * as argon2 from "argon2";
+import argon2 from "argon2";
 import {
-  IUser,
   TwoFactorBackupInsertForm,
   TwoFactorBackupTable,
-  TwoFactorSecretTable,
   UserTable,
 } from "src/drizzle/schemas";
 import { AuthUtilService } from "./util.service";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
-import { eq, getTableColumns } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Response } from "express";
 import * as otplib from "otplib";
 import { toDataURL } from "qrcode";
@@ -34,18 +32,21 @@ export class AuthService implements IAuthService {
   }
 
   async register(res: Response, payload: RegisterPayload) {
-    const [user] = await this.db
+    const [userExists] = await this.db
       .select({ id: UserTable.id })
       .from(UserTable)
       .where(eq(UserTable.email, payload.email));
-    if (user) {
+    if (userExists) {
       throw new LinaError(LinaErrorType.EMAIL_ALREADY_EXISTS);
     }
 
     return await this.db.transaction(async (tx) => {
       const hashedPass = await argon2.hash(payload.password);
 
-      const { passwordHash, ...userColumns } = getTableColumns(UserTable);
+      // omit secret fields from user insertion returning values
+      const returningCols =
+        this.authUtilService.omitSensitiveUserTableFields(UserTable);
+
       const [user] = await tx
         .insert(UserTable)
         .values({
@@ -53,7 +54,7 @@ export class AuthService implements IAuthService {
           email: payload.email,
           passwordHash: hashedPass,
         })
-        .returning(userColumns);
+        .returning(returningCols);
 
       this.authUtilService.generateAuthToken(res, user);
       return user;
@@ -65,42 +66,38 @@ export class AuthService implements IAuthService {
       payload.email,
       payload.password,
     );
+
     // two-factor false: simply generate token and logged in user
     if (!user.twoFactor) {
       this.authUtilService.generateAuthToken(res, user);
-      return user;
+      return this.authUtilService.omitSensitiveUserFields(user);
     }
-
     if (!payload.code && !payload.backupCode) {
       throw new LinaError(LinaErrorType.TWO_FACTOR_CODE_REQUIRED);
     }
 
     await this.db.transaction(async (tx) => {
       if (payload.code) {
-        const [twoFactor] = await tx
-          .select({
-            secret: TwoFactorSecretTable.secret,
-          })
-          .from(TwoFactorSecretTable)
-          .where(eq(TwoFactorSecretTable.userId, user.id));
-
-        const secret = this.cryptr.decrypt(twoFactor.secret);
-        if (!otplib.authenticator.check(payload.code, secret)) {
+        const secret = this.cryptr.decrypt(user.twoFactorSecret!);
+        const isValid = otplib.authenticator.check(payload.code, secret);
+        if (!isValid) {
           throw new LinaError(LinaErrorType.INVALID_TWO_FACTOR_CODE);
         }
       } else if (payload.backupCode) {
-        const backupCodes = await tx
+        const [backupCode] = await tx
           .select()
           .from(TwoFactorBackupTable)
-          .where(eq(TwoFactorBackupTable.userId, user.id));
+          .where(
+            and(
+              eq(TwoFactorBackupTable.userId, user.id),
+              eq(TwoFactorBackupTable.code, payload.backupCode),
+              eq(TwoFactorBackupTable.used, false),
+            ),
+          );
 
-        const backupCode = backupCodes.find(
-          (code) => !code.used && payload.backupCode === code.code,
-        );
         if (!backupCode) {
           throw new LinaError(LinaErrorType.INVALID_BACKUP_CODE);
         }
-
         await tx
           .update(TwoFactorBackupTable)
           .set({ used: true })
@@ -108,11 +105,16 @@ export class AuthService implements IAuthService {
       }
 
       this.authUtilService.generateAuthToken(res, user);
-      return user;
+      return this.authUtilService.omitSensitiveUserFields(user);
     });
   }
 
-  async setupTwoFactor(user: IUser) {
+  async setupTwoFactor(userId: string) {
+    const [user] = await this.db
+      .select()
+      .from(UserTable)
+      .where(eq(UserTable.id, userId));
+
     if (user.twoFactor) {
       throw new LinaError(LinaErrorType.TWO_FACTOR_ENABLE);
     }
@@ -129,10 +131,16 @@ export class AuthService implements IAuthService {
     return { qrCodeUrl, secret };
   }
 
-  async verifyTwoFactor(
-    user: Omit<IUser, "passwordHash">,
-    payload: VerifyTwoFactorPayload,
-  ) {
+  async verifyTwoFactor(userId: string, payload: VerifyTwoFactorPayload) {
+    const [user] = await this.db
+      .select({
+        id: UserTable.id,
+        twoFactor: UserTable.twoFactor,
+        secret: UserTable.twoFactorSecret,
+      })
+      .from(UserTable)
+      .where(eq(UserTable.id, userId));
+
     if (user.twoFactor) {
       throw new LinaError(LinaErrorType.TWO_FACTOR_ENABLE);
     }
@@ -158,17 +166,14 @@ export class AuthService implements IAuthService {
 
     await this.db.transaction(async (tx) => {
       const encryptedSecret = this.cryptr.encrypt(payload.secret);
-
-      await tx.insert(TwoFactorBackupTable).values(backupInsertForm).execute();
-      await tx.insert(TwoFactorSecretTable).values({
-        secret: encryptedSecret,
-        userId: user.id,
-      });
-      await tx
-        .update(UserTable)
-        .set({ twoFactor: true })
-        .where(eq(UserTable.id, user.id))
-        .execute();
+      await Promise.all([
+        tx.insert(TwoFactorBackupTable).values(backupInsertForm).execute(),
+        tx
+          .update(UserTable)
+          .set({ twoFactorSecret: encryptedSecret, twoFactor: true })
+          .where(eq(UserTable.id, userId))
+          .execute(),
+      ]);
     });
 
     return backupCodes;

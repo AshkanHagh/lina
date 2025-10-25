@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { sign } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
 import { IUser, UserTable } from "src/drizzle/schemas";
 import { LinaError, LinaErrorType } from "src/filters/exception";
@@ -7,8 +7,8 @@ import { Response } from "express";
 import { AUTH_TOKEN_COOKIE_NAME } from "./constants";
 import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
-import { eq } from "drizzle-orm";
-import * as argon2 from "argon2";
+import { eq, getTableColumns } from "drizzle-orm";
+import argon2 from "argon2";
 
 @Injectable()
 export class AuthUtilService {
@@ -42,12 +42,11 @@ export class AuthUtilService {
       throw new LinaError(LinaErrorType.INVALID_EMAIL_OR_PASSWORD);
     }
 
-    const { passwordHash, ...userWithoutPass } = user;
-    return userWithoutPass;
+    return user;
   }
 
   generateAuthToken(res: Response, user: Pick<IUser, "email" | "id">) {
-    const token = sign(
+    const token = jwt.sign(
       {
         userId: user.id,
         email: user.email,
@@ -63,5 +62,35 @@ export class AuthUtilService {
       secure: process.env.NODE_ENV === "production",
       maxAge: this.authConfig.authToken.exp,
     });
+  }
+
+  // omits user table sensitive columns
+  omitSensitiveUserTableFields(userTable: typeof UserTable) {
+    /* eslint-disable */
+    const {
+      passwordHash,
+      updatedAt,
+      twoFactorSecret,
+      passwordRetryCount,
+      ...rest
+    } = getTableColumns(userTable);
+    /* eslint-enable */
+
+    return rest;
+  }
+
+  // omits users sensitive information
+  omitSensitiveUserFields(user: IUser) {
+    /* eslint-disable */
+    const {
+      passwordHash,
+      updatedAt,
+      twoFactorSecret,
+      passwordRetryCount,
+      ...rest
+    } = user;
+    /* eslint-enable */
+
+    return rest;
   }
 }
