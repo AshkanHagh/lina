@@ -6,6 +6,7 @@ import { APP_FILTER, APP_PIPE } from "@nestjs/core";
 import { LinaExceptionFilter } from "./filters/exception-filter";
 import { ZodValidationPipe } from "./utils/zod-validation.pipe";
 import { ScheduleModule } from "@nestjs/schedule";
+import { GithubModule } from "./features/github/github.module";
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { ScheduleModule } from "@nestjs/schedule";
     DrizzleModule,
     AuthModule,
     // WorkerModule,
-    // GithubModule,
+    GithubModule,
     ScheduleModule.forRoot(),
     // OrchestrationModule,
     // BuildModule,

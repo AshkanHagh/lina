@@ -1,6 +1,7 @@
-// import { InstallationCallbackDto } from "../dto";
+import { CreateGithubAppDto } from "../dto";
 
-// export interface IGithubController {
-//   install(userId: string): Promise<{ url: string }>;
-//   installationCallback(payload: InstallationCallbackDto): Promise<void>;
-// }
+export interface IGithubController {
+  createGithubApp(payload: CreateGithubAppDto): Promise<{ url: string }>;
+  // install(userId: string): Promise<{ url: string }>;
+  // installationCallback(payload: InstallationCallbackDto): Promise<void>;
+}
