@@ -1,24 +1,13 @@
 import { Module } from "@nestjs/common";
 import { ConfigsModule } from "./configs/configs.module";
 import { DrizzleModule } from "./drizzle/drizzle.module";
-import { AuthModule } from "./features/auth/auth.module";
 import { APP_FILTER, APP_PIPE } from "@nestjs/core";
 import { LinaExceptionFilter } from "./filters/exception-filter";
 import { ZodValidationPipe } from "./utils/zod-validation.pipe";
 import { ScheduleModule } from "@nestjs/schedule";
-import { GithubModule } from "./features/github/github.module";
 
 @Module({
-  imports: [
-    ConfigsModule.register(),
-    DrizzleModule,
-    AuthModule,
-    // WorkerModule,
-    GithubModule,
-    ScheduleModule.forRoot(),
-    // OrchestrationModule,
-    // BuildModule,
-  ],
+  imports: [ConfigsModule.register(), DrizzleModule, ScheduleModule.forRoot()],
   providers: [
     {
       provide: APP_FILTER,
