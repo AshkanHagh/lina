@@ -7,11 +7,17 @@ export const UserTable = pgTable("users", (table) => {
     fullName: table.varchar({ length: 255 }).notNull(),
     email: table.varchar({ length: 255 }).notNull(),
     passwordHash: table.text().notNull(),
+    twoFactorSecret: table.text(),
+    twoFactorRecoveryCodes: table.text().array(),
+    twoFactorConfirmedAt: table.timestamp(),
     createdAt,
     updatedAt,
   };
 });
 
 export type UserRecord = typeof UserTable.$inferSelect;
-export type User = Omit<UserRecord, "passwordHash" | "updatedAt">;
+export type User = Omit<
+  UserRecord,
+  "passwordHash" | "updatedAt" | "twoFactorRecoveryCodes" | "twoFactorSecret"
+>;
 export type UserInsertForm = typeof UserTable.$inferInsert;

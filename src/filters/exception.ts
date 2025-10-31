@@ -6,6 +6,12 @@ export enum LinaErrorType {
   FORBIDDEN = "FORBIDDEN",
   REGISTER_NOT_ENABLED = "REGISTER_NOT_ENABLED",
   FAILED_TO_GENERATE_AUTH_TOKEN = "FAILED_TO_GENERATE_AUTH_TOKEN",
+  INVALID_EMAIL_OR_PASSWORD = "INVALID_EMAIL_OR_PASSWORD",
+  DECRYPTION_ERROR = "DECRYPTION_ERROR",
+  INVALID_TWO_FACTOR_CODE = "INVALID_TWO_FACTOR_CODE",
+  TWO_FACTOR_REQUIRED = "TWO_FACTOR_REQUIRED",
+  TWO_FACTOR_NOT_ENABLED = "TWO_FACTOR_NOT_ENABLED",
+  NO_BACKUP_CODES_AVAILABLE = "NO_BACKUP_CODES_AVAILABLE",
 }
 
 export class LinaError extends HttpException {
@@ -20,6 +26,9 @@ export class LinaError extends HttpException {
 
   static getStatusCode(type: LinaErrorType) {
     switch (type) {
+      case LinaErrorType.INVALID_EMAIL_OR_PASSWORD: {
+        return HttpStatus.UNAUTHORIZED;
+      }
       case LinaErrorType.INVALID_BODY_FIELD: {
         return HttpStatus.UNPROCESSABLE_ENTITY;
       }

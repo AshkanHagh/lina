@@ -9,3 +9,13 @@ const RegisterSchema = z.object({
 
 export class RegisterDto extends createZodDto(RegisterSchema) {}
 export type RegisterPayload = z.infer<typeof RegisterSchema>;
+
+const LoginSchema = z.object({
+  email: z.email(),
+  password: z.string().max(255),
+  twoFactorCode: z.string().length(6).optional(),
+  twoFactorBackupCode: z.string().optional(),
+});
+
+export class LoginDto extends createZodDto(LoginSchema) {}
+export type LoginPayload = z.infer<typeof LoginSchema>;

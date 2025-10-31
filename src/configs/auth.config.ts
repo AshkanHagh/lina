@@ -11,6 +11,7 @@ export const authConfig = registerAs("auth", () => {
       maxAge: 1000 * 60 * 60 * 24 * 15,
       secure: process.env.NODE_ENV === "production",
     },
+    twoFactorEncryptionKey: process.env.TWO_FACTOR_ENCRYPTION_KEY!,
   };
 });
 
