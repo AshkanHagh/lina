@@ -5,9 +5,15 @@ import { APP_FILTER, APP_PIPE } from "@nestjs/core";
 import { LinaExceptionFilter } from "./filters/exception-filter";
 import { ZodValidationPipe } from "./utils/zod-validation.pipe";
 import { ScheduleModule } from "@nestjs/schedule";
+import { AuthModule } from "./features/auth/auth.module";
 
 @Module({
-  imports: [ConfigsModule.register(), DrizzleModule, ScheduleModule.forRoot()],
+  imports: [
+    ConfigsModule.register(),
+    ScheduleModule.forRoot(),
+    DrizzleModule,
+    AuthModule,
+  ],
   providers: [
     {
       provide: APP_FILTER,
