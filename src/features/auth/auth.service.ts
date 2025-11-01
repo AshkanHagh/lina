@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { IAuthService } from "./interfaces/service";
 import { Response } from "express";
 import { User, UserTable } from "src/drizzle/schemas";
-import { LoginPayload, RegisterPayload } from "./dtos";
+import { LoginPayload, RegisterPayload, VerifyTwoFactorPayload } from "./dtos";
 import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
 import { SettingTable } from "src/drizzle/schemas/setting.schema";
@@ -15,6 +15,7 @@ import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
 import { AuthUser } from "src/types";
 import { toDataURL } from "qrcode";
 import Cryptr from "cryptr";
+import { randomBytes } from "node:crypto";
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -90,26 +91,48 @@ export class AuthService implements IAuthService {
         throw new LinaError(LinaErrorType.INVALID_TWO_FACTOR_CODE);
       }
     } else if (payload.twoFactorBackupCode) {
-      if (!user.twoFactorRecoveryCodes?.length) {
-        throw new LinaError(LinaErrorType.NO_BACKUP_CODES_AVAILABLE);
-      }
+      const { timingSafeEqual } = await import("crypto");
 
-      const isCodeValid = user.twoFactorRecoveryCodes.some(
-        (code) => code === payload.twoFactorBackupCode,
-      );
-      if (!isCodeValid) {
-        throw new LinaError(LinaErrorType.INVALID_TWO_FACTOR_CODE);
-      }
+      await this.db.transaction(async (tx) => {
+        const [userTwoFactor] = await tx
+          .select({
+            backupCodes: UserTable.twoFactorRecoveryCodes,
+          })
+          .from(UserTable)
+          .where(eq(UserTable.id, user.id))
+          .for("update");
 
-      // remove used backup code
-      await this.db
-        .update(UserTable)
-        .set({
-          twoFactorRecoveryCodes: user.twoFactorRecoveryCodes.filter(
-            (code) => code !== payload.twoFactorBackupCode,
-          ),
-        })
-        .where(eq(UserTable.id, user.id));
+        if (!userTwoFactor.backupCodes?.length) {
+          throw new LinaError(LinaErrorType.NO_BACKUP_CODES_AVAILABLE);
+        }
+
+        const isCodeValid = userTwoFactor.backupCodes.some((code) => {
+          try {
+            return (
+              code.length === payload.twoFactorBackupCode?.length &&
+              timingSafeEqual(
+                Buffer.from(code),
+                Buffer.from(payload.twoFactorBackupCode),
+              )
+            );
+          } catch (_) {
+            return false;
+          }
+        });
+        if (!isCodeValid) {
+          throw new LinaError(LinaErrorType.INVALID_TWO_FACTOR_CODE);
+        }
+
+        // remove used backup code
+        await tx
+          .update(UserTable)
+          .set({
+            twoFactorRecoveryCodes: userTwoFactor.backupCodes.filter(
+              (code) => code !== payload.twoFactorBackupCode,
+            ),
+          })
+          .where(eq(UserTable.id, user.id));
+      });
     } else {
       throw new LinaError(LinaErrorType.TWO_FACTOR_REQUIRED);
     }
@@ -147,5 +170,56 @@ export class AuthService implements IAuthService {
       .where(eq(UserTable.id, user.id));
 
     return qrcodeUrl;
+  }
+
+  async verifyTwoFactor(
+    user: AuthUser,
+    payload: VerifyTwoFactorPayload,
+  ): Promise<string[]> {
+    const [userTwoFactor] = await this.db
+      .select({
+        twoFactorConfirmedAt: UserTable.twoFactorConfirmedAt,
+        twoFactorSecret: UserTable.twoFactorSecret,
+      })
+      .from(UserTable)
+      .where(eq(UserTable.id, user.id));
+
+    if (userTwoFactor.twoFactorConfirmedAt) {
+      throw new LinaError(LinaErrorType.TWO_FACTOR_ENABLED);
+    }
+    if (!userTwoFactor.twoFactorSecret) {
+      throw new LinaError(LinaErrorType.TWO_FACTOR_NOT_ENABLED);
+    }
+
+    let decryptedSecret: string;
+    try {
+      decryptedSecret = this.cryptr.decrypt(userTwoFactor.twoFactorSecret);
+    } catch (err) {
+      throw new LinaError(LinaErrorType.DECRYPTION_ERROR, err);
+    }
+    const isValid = authenticator.check(payload.code, decryptedSecret);
+    if (!isValid) {
+      throw new LinaError(LinaErrorType.INVALID_TWO_FACTOR_CODE);
+    }
+
+    const backupCodes: string[] = [];
+    const backupCount = 8;
+    for (let i = 0; i < backupCount; i++) {
+      const code = randomBytes(5).toString("hex");
+      backupCodes.push(code);
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(UserTable)
+        .set({
+          twoFactorRecoveryCodes: backupCodes,
+          twoFactorConfirmedAt: new Date(),
+        })
+        .where(eq(UserTable.id, user.id))
+        .execute();
+    });
+
+    return backupCodes;
   }
 }

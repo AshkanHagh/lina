@@ -19,3 +19,10 @@ const LoginSchema = z.object({
 
 export class LoginDto extends createZodDto(LoginSchema) {}
 export type LoginPayload = z.infer<typeof LoginSchema>;
+
+const VerifyTwoFactorSchema = z.object({
+  code: z.string().length(6),
+});
+
+export class VerifyTwoFactorDto extends createZodDto(VerifyTwoFactorSchema) {}
+export type VerifyTwoFactorPayload = z.infer<typeof VerifyTwoFactorSchema>;

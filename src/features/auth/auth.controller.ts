@@ -12,7 +12,7 @@ import { AuthService } from "./auth.service";
 import { IAuthController } from "./interfaces/controller";
 import { Response } from "express";
 import { User } from "src/drizzle/schemas";
-import { LoginDto, RegisterDto } from "./dtos";
+import { LoginDto, RegisterDto, VerifyTwoFactorDto } from "./dtos";
 import { AuthUser } from "src/types";
 import { UserD } from "./decorators/user.decorator";
 import { AuthorizationGuard } from "./gurads/authorization.guard";
@@ -43,5 +43,14 @@ export class AuthController implements IAuthController {
   async setupTwoFactor(@UserD() user: AuthUser): Promise<{ url: string }> {
     const url = await this.authService.setupTwoFactor(user);
     return { url };
+  }
+
+  @Post("/two-factor/verify")
+  @UseGuards(AuthorizationGuard)
+  async verifyTwoFactor(
+    @UserD() user: AuthUser,
+    @Body() payload: VerifyTwoFactorDto,
+  ): Promise<string[]> {
+    return this.authService.verifyTwoFactor(user, payload);
   }
 }
