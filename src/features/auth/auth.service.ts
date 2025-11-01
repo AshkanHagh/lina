@@ -11,16 +11,22 @@ import { LinaError, LinaErrorType } from "src/filters/exception";
 import argon2 from "argon2";
 import { AuthUtilService } from "./util.service";
 import { authenticator } from "otplib";
-import { decryptString } from "@47ng/cloak";
 import { AuthConfig, IAuthConfig } from "src/configs/auth.config";
+import { AuthUser } from "src/types";
+import { toDataURL } from "qrcode";
+import Cryptr from "cryptr";
 
 @Injectable()
 export class AuthService implements IAuthService {
+  private cryptr: Cryptr;
+
   constructor(
     @Inject(DATABASE) private db: Database,
     @AuthConfig() private authConfig: IAuthConfig,
     private authUtilService: AuthUtilService,
-  ) {}
+  ) {
+    this.cryptr = new Cryptr(this.authConfig.twoFactorEncryptionKey);
+  }
 
   // TODO: on first registration generate default settings for user like projects envs...
   async register(res: Response, payload: RegisterPayload): Promise<User> {
@@ -74,10 +80,7 @@ export class AuthService implements IAuthService {
 
       let secret: string;
       try {
-        secret = await decryptString(
-          user.twoFactorSecret,
-          this.authConfig.twoFactorEncryptionKey,
-        );
+        secret = this.cryptr.decrypt(user.twoFactorSecret);
       } catch (err) {
         throw new LinaError(LinaErrorType.DECRYPTION_ERROR, err);
       }
@@ -113,5 +116,36 @@ export class AuthService implements IAuthService {
 
     this.authUtilService.generateAuthToken(res, user.id);
     return this.authUtilService.omitSensitiveFields(user);
+  }
+
+  async setupTwoFactor(user: AuthUser): Promise<string> {
+    const [{ twoFactorConfirmedAt }] = await this.db
+      .select({
+        twoFactorConfirmedAt: UserTable.twoFactorConfirmedAt,
+      })
+      .from(UserTable)
+      .where(eq(UserTable.id, user.id));
+
+    if (twoFactorConfirmedAt) {
+      throw new LinaError(LinaErrorType.TWO_FACTOR_ENABLED);
+    }
+
+    const secret = authenticator.generateSecret();
+    const otpauth = authenticator.keyuri(user.email, "Lina", secret);
+
+    let qrcodeUrl: string;
+    try {
+      qrcodeUrl = await toDataURL(otpauth);
+    } catch (error) {
+      throw new LinaError(LinaErrorType.QRCODE_GENERATION_FAILED, error);
+    }
+
+    const encryptedSecret = this.cryptr.encrypt(secret);
+    await this.db
+      .update(UserTable)
+      .set({ twoFactorSecret: encryptedSecret })
+      .where(eq(UserTable.id, user.id));
+
+    return qrcodeUrl;
   }
 }

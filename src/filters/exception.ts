@@ -12,6 +12,10 @@ export enum LinaErrorType {
   TWO_FACTOR_REQUIRED = "TWO_FACTOR_REQUIRED",
   TWO_FACTOR_NOT_ENABLED = "TWO_FACTOR_NOT_ENABLED",
   NO_BACKUP_CODES_AVAILABLE = "NO_BACKUP_CODES_AVAILABLE",
+  UNAUTHORIZATION = "UNAUTHORIZATION",
+  INVALID_TOKEN = "INVALID_TOKEN",
+  TWO_FACTOR_ENABLED = "TWO_FACTOR_ENABLED",
+  QRCODE_GENERATION_FAILED = "QRCODE_GENERATION_FAILED",
 }
 
 export class LinaError extends HttpException {
@@ -26,7 +30,9 @@ export class LinaError extends HttpException {
 
   static getStatusCode(type: LinaErrorType) {
     switch (type) {
-      case LinaErrorType.INVALID_EMAIL_OR_PASSWORD: {
+      case LinaErrorType.UNAUTHORIZATION:
+      case LinaErrorType.INVALID_EMAIL_OR_PASSWORD:
+      case LinaErrorType.INVALID_TOKEN: {
         return HttpStatus.UNAUTHORIZED;
       }
       case LinaErrorType.INVALID_BODY_FIELD: {

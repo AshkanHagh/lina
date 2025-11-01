@@ -4,7 +4,7 @@ import { ConfigType, registerAs } from "@nestjs/config";
 export const authConfig = registerAs("auth", () => {
   return {
     authToken: {
-      secret: process.env.AUTH_TOKEN_SECRET,
+      secret: process.env.AUTH_TOKEN_SECRET || "sh",
       exp: 60 * 24 * 15,
     },
     cookie: {
