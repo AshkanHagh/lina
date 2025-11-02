@@ -45,7 +45,21 @@ export class LinaError extends HttpException {
       case LinaErrorType.FORBIDDEN: {
         return HttpStatus.FORBIDDEN;
       }
+      case LinaErrorType.INVALID_TWO_FACTOR_CODE:
+      case LinaErrorType.TWO_FACTOR_REQUIRED:
+      case LinaErrorType.TWO_FACTOR_NOT_ENABLED:
+      case LinaErrorType.TWO_FACTOR_ENABLED:
+      case LinaErrorType.NO_BACKUP_CODES_AVAILABLE: {
+        return HttpStatus.BAD_REQUEST;
+      }
+      case LinaErrorType.SETTING_NOT_FOUND: {
+        return HttpStatus.NOT_FOUND;
+      }
+      case LinaErrorType.INVALID_STATE: {
+        return HttpStatus.CONFLICT;
+      }
       default: {
+        // All unhandled errors will return 500 INTERNAL_SERVER_ERROR
         return HttpStatus.INTERNAL_SERVER_ERROR;
       }
     }
