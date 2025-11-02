@@ -1,5 +1,8 @@
 import { pgTable } from "drizzle-orm/pg-core";
 import { createdAt, id, updatedAt } from "../utils";
+import { relations } from "drizzle-orm";
+import { IntegrationTable } from "./integration.schema";
+import { RedirectStateTable } from "./redirect-state.schema";
 
 export const UserTable = pgTable("users", (table) => {
   return {
@@ -21,3 +24,8 @@ export type User = Omit<
   "passwordHash" | "updatedAt" | "twoFactorRecoveryCodes" | "twoFactorSecret"
 >;
 export type UserInsertForm = typeof UserTable.$inferInsert;
+
+export const UserRelations = relations(UserTable, ({ many }) => ({
+  integrations: many(IntegrationTable),
+  redirectStates: many(RedirectStateTable),
+}));
