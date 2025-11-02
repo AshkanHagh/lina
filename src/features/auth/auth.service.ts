@@ -209,16 +209,14 @@ export class AuthService implements IAuthService {
       backupCodes.push(code);
     }
 
-    await this.db.transaction(async (tx) => {
-      await tx
-        .update(UserTable)
-        .set({
-          twoFactorRecoveryCodes: backupCodes,
-          twoFactorConfirmedAt: new Date(),
-        })
-        .where(eq(UserTable.id, user.id))
-        .execute();
-    });
+    await this.db
+      .update(UserTable)
+      .set({
+        twoFactorRecoveryCodes: backupCodes,
+        twoFactorConfirmedAt: new Date(),
+      })
+      .where(eq(UserTable.id, user.id))
+      .execute();
 
     return backupCodes;
   }
