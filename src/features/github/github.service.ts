@@ -139,4 +139,35 @@ export class GithubService implements IGithubService {
       });
     });
   }
+
+  async setupGithubInstallation(userId: string): Promise<string> {
+    const [integration] = await this.db
+      .select({
+        data: IntegrationTable.data,
+      })
+      .from(IntegrationTable)
+      .where(
+        and(
+          eq(IntegrationTable.type, "github_app"),
+          eq(IntegrationTable.userId, userId),
+        ),
+      );
+
+    if (!integration) {
+      throw new LinaError(LinaErrorType.GITHUB_APP_NOT_CREATED_OR_CONFIGURED);
+    }
+
+    const state = randomBytes(32).toString("hex");
+    await this.db.insert(RedirectStateTable).values({
+      flow: "github_installation",
+      expiresAt: new Date(Date.now() + 1000 * 60 * 15),
+      token: state,
+      userId,
+    });
+
+    // Split base URL and return URL to keep lines short and readable
+    // @ts-expect-error unknown type
+    const baseUrl = `https://github.com/apps/${integration.data.slug}/installations/new`;
+    return `${baseUrl}?state=${encodeURIComponent(state)}`;
+  }
 }

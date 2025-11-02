@@ -22,4 +22,13 @@ export class GithubController implements IGithubController {
   async githubAppCallback(@Query() payload: GithubAppCallbackDto) {
     await this.githubService.githubAppCallback(payload);
   }
+
+  @Get("/installation/setup")
+  @UseGuards(AuthorizationGuard)
+  async setupGithubInstallation(
+    @UserD("id") userId: string,
+  ): Promise<{ url: string }> {
+    const url = await this.githubService.setupGithubInstallation(userId);
+    return { url };
+  }
 }

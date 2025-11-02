@@ -19,7 +19,7 @@ export class LinaExceptionFilter implements ExceptionFilter {
     this.logger.error(`message: ${exception.type || exception.message}`);
     // @ts-expect-error unkown type
     // eslint-disable-next-line
-    const errorCauseMsg = exception.cause.message;
+    const errorCauseMsg = exception.cause?.message;
     this.logger.error(`cause: ${errorCauseMsg || (exception.cause as string)}`);
 
     const statusCode = exception.getStatus();

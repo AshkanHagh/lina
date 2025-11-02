@@ -6,4 +6,5 @@ export interface IGithubService {
     payload: SetupGithubAppPayload,
   ): Promise<{ manifest: unknown; state: string; org: string | undefined }>;
   githubAppCallback(payload: GithubAppCallbackPayload): Promise<void>;
+  setupGithubInstallation(userId: string): Promise<string>;
 }
