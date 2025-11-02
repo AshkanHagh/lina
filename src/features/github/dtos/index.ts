@@ -3,7 +3,18 @@ import z from "zod";
 
 const SetupGithubAppSchema = z.object({
   name: z.string().min(2).max(100),
+  org: z.string().min(2).max(100).optional(),
 });
 
 export class SetupGithubAppDto extends createZodDto(SetupGithubAppSchema) {}
 export type SetupGithubAppPayload = z.infer<typeof SetupGithubAppSchema>;
+
+const GithubAppCallbackSchema = z.object({
+  code: z.string().max(255),
+  state: z.string().max(255),
+});
+
+export class GithubAppCallbackDto extends createZodDto(
+  GithubAppCallbackSchema,
+) {}
+export type GithubAppCallbackPayload = z.infer<typeof GithubAppCallbackSchema>;
