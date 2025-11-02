@@ -1,4 +1,8 @@
-import { GithubAppCallbackDto, SetupGithubAppDto } from "../dtos";
+import {
+  GithubAppCallbackDto,
+  InstallCallbackDto,
+  SetupGithubAppDto,
+} from "../dtos";
 
 export interface IGithubController {
   setupGithubApp(
@@ -6,5 +10,6 @@ export interface IGithubController {
     payload: SetupGithubAppDto,
   ): Promise<{ manifest: unknown; state: string; org: string | undefined }>;
   githubAppCallback(payload: GithubAppCallbackDto): Promise<void>;
-  setupGithubInstallation(userId: string): Promise<{ url: string }>;
+  setupGithubInstall(userId: string): Promise<{ url: string }>;
+  githubInstallCallback(payload: InstallCallbackDto): Promise<void>;
 }

@@ -18,3 +18,12 @@ export class GithubAppCallbackDto extends createZodDto(
   GithubAppCallbackSchema,
 ) {}
 export type GithubAppCallbackPayload = z.infer<typeof GithubAppCallbackSchema>;
+
+const InstallCallbackSchema = z.object({
+  installation_id: z.coerce.number(),
+  setup_action: z.enum(["install", "update"]),
+  state: z.string().max(255),
+});
+
+export class InstallCallbackDto extends createZodDto(InstallCallbackSchema) {}
+export type InstallCallbackPayload = z.infer<typeof InstallCallbackSchema>;

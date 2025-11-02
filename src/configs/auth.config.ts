@@ -5,7 +5,7 @@ export const authConfig = registerAs("auth", () => {
   return {
     authToken: {
       secret: process.env.AUTH_TOKEN_SECRET || "sh",
-      exp: 60 * 24 * 15,
+      exp: 60 * 60 * 24 * 15,
     },
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * 15,

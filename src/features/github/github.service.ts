@@ -1,6 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { IGithubService } from "./interfaces/service";
-import { GithubAppCallbackPayload, SetupGithubAppPayload } from "./dtos";
+import {
+  GithubAppCallbackPayload,
+  InstallCallbackPayload,
+  SetupGithubAppPayload,
+} from "./dtos";
 import { DATABASE } from "src/drizzle/constants";
 import { Database } from "src/drizzle/types";
 import {
@@ -67,6 +71,7 @@ export class GithubService implements IGithubService {
           active: true,
         },
         redirect_url: `${instanceUrl.value}/api/v1/github/app/callback`,
+        setup_url: `${instanceUrl.value}/api/v1/github/install/callback`,
         public: false,
         default_permissions: {
           contents: "read",
@@ -95,7 +100,6 @@ export class GithubService implements IGithubService {
           ),
         ),
       );
-
     if (!state) {
       throw new LinaError(LinaErrorType.INVALID_STATE);
     }
@@ -140,7 +144,7 @@ export class GithubService implements IGithubService {
     });
   }
 
-  async setupGithubInstallation(userId: string): Promise<string> {
+  async setupGithubInstall(userId: string): Promise<string> {
     const [integration] = await this.db
       .select({
         data: IntegrationTable.data,
@@ -169,5 +173,49 @@ export class GithubService implements IGithubService {
     // @ts-expect-error unknown type
     const baseUrl = `https://github.com/apps/${integration.data.slug}/installations/new`;
     return `${baseUrl}?state=${encodeURIComponent(state)}`;
+  }
+
+  async githubInstallCallback(payload: InstallCallbackPayload) {
+    const [state] = await this.db
+      .select()
+      .from(RedirectStateTable)
+      .where(
+        and(
+          eq(RedirectStateTable.token, payload.state),
+          gt(
+            RedirectStateTable.expiresAt,
+            new Date(Date.now() - 1000 * 60 * 15),
+          ),
+        ),
+      );
+    if (!state) {
+      throw new LinaError(LinaErrorType.INVALID_STATE);
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(RedirectStateTable)
+        .where(eq(RedirectStateTable.id, state.id))
+        .execute();
+
+      const [appDetails] = await tx
+        .select({ data: IntegrationTable.data, id: IntegrationTable.id })
+        .from(IntegrationTable)
+        .where(
+          and(
+            eq(IntegrationTable.userId, state.userId),
+            eq(IntegrationTable.type, "github_app"),
+          ),
+        );
+      await tx
+        .update(IntegrationTable)
+        .set({
+          data: {
+            ...(appDetails.data as Record<string, unknown>),
+            installationId: payload.installation_id,
+          },
+        })
+        .where(eq(IntegrationTable.id, appDetails.id));
+    });
   }
 }

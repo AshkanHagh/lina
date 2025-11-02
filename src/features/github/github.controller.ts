@@ -1,7 +1,11 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from "@nestjs/common";
 import { GithubService } from "./github.service";
 import { IGithubController } from "./interfaces/controller";
-import { GithubAppCallbackDto, SetupGithubAppDto } from "./dtos";
+import {
+  GithubAppCallbackDto,
+  InstallCallbackDto,
+  SetupGithubAppDto,
+} from "./dtos";
 import { UserD } from "../auth/decorators/user.decorator";
 import { AuthorizationGuard } from "../auth/gurads/authorization.guard";
 
@@ -23,12 +27,19 @@ export class GithubController implements IGithubController {
     await this.githubService.githubAppCallback(payload);
   }
 
-  @Get("/installation/setup")
+  @Get("/install/setup")
   @UseGuards(AuthorizationGuard)
-  async setupGithubInstallation(
+  async setupGithubInstall(
     @UserD("id") userId: string,
   ): Promise<{ url: string }> {
-    const url = await this.githubService.setupGithubInstallation(userId);
+    const url = await this.githubService.setupGithubInstall(userId);
     return { url };
+  }
+
+  @Get("/install/callback")
+  async githubInstallCallback(
+    @Query() payload: InstallCallbackDto,
+  ): Promise<void> {
+    await this.githubService.githubInstallCallback(payload);
   }
 }
