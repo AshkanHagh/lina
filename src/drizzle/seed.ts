@@ -6,16 +6,24 @@ async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const db = drizzle(pool, { casing: "snake_case", schema });
 
-  await db
-    .insert(schema.SettingTable)
-    .values([
+  await db.transaction(async (tx) => {
+    await tx.insert(schema.SettingTable).values([
       {
         key: "REGISTER_ENABLE",
         value: "true",
       },
-    ])
-    .execute();
+      {
+        key: "APP_URL",
+        value: "http://localhost:7319",
+      },
+      {
+        key: "GITHUB_WEBHOOK_URL",
+        value: process.env.GITHUB_WEBHOOK_URL,
+      },
+    ]);
+  });
+
+  process.exit(0);
 }
 
 main();
-process.exit(0);
