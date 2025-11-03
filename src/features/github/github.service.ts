@@ -12,7 +12,7 @@ import {
   RedirectStateTable,
   SettingTable,
 } from "src/drizzle/schemas";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { LinaError, LinaErrorType } from "src/filters/exception";
 import { randomBytes } from "node:crypto";
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
@@ -26,7 +26,7 @@ export class GithubService implements IGithubService {
 
   constructor(@Inject(DATABASE) private db: Database) {
     this.octokit = new Octokit();
-    this.cryptr = new Cryptr(process.env.GITHUB_APP_ENCRYPTION_KEY || "sh");
+    this.cryptr = new Cryptr(process.env.GITHUB_APP_ENCRYPTION_KEY!);
   }
 
   // returns a dynamic manifest and state.
@@ -198,24 +198,21 @@ export class GithubService implements IGithubService {
         .where(eq(RedirectStateTable.id, state.id))
         .execute();
 
-      const [appDetails] = await tx
-        .select({ data: IntegrationTable.data, id: IntegrationTable.id })
-        .from(IntegrationTable)
-        .where(
-          and(
-            eq(IntegrationTable.userId, state.userId),
-            eq(IntegrationTable.type, "github_app"),
-          ),
-        );
-      await tx
-        .update(IntegrationTable)
-        .set({
-          data: {
-            ...(appDetails.data as Record<string, unknown>),
-            installationId: payload.installation_id,
-          },
-        })
-        .where(eq(IntegrationTable.id, appDetails.id));
+      if (payload.setup_action === "install") {
+        await tx
+          .update(IntegrationTable)
+          .set({
+            data: sql`
+              jsonb_set(${IntegrationTable.data}, '{installationId}', to_jsonb(${payload.installation_id}::bigint))
+            `,
+          })
+          .where(
+            and(
+              eq(IntegrationTable.userId, state.userId),
+              eq(IntegrationTable.type, "github_app"),
+            ),
+          );
+      }
     });
   }
 }

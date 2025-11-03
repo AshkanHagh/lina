@@ -23,7 +23,7 @@ export class AuthUtilService {
           userId,
           exp: Math.floor(Date.now() / 1000 + this.authConfig.authToken.exp),
         },
-        this.authConfig.authToken.secret!,
+        this.authConfig.authToken.secret,
       );
     } catch (error) {
       throw new LinaError(LinaErrorType.FAILED_TO_GENERATE_AUTH_TOKEN, error);
@@ -45,7 +45,6 @@ export class AuthUtilService {
       updatedAt,
       twoFactorRecoveryCodes,
       twoFactorSecret,
-
       ...rest
     } = user;
     return rest;

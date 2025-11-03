@@ -29,7 +29,6 @@ export class AuthService implements IAuthService {
     this.cryptr = new Cryptr(this.authConfig.twoFactorEncryptionKey);
   }
 
-  // TODO: on first registration generate default settings for user like projects envs...
   async register(res: Response, payload: RegisterPayload): Promise<User> {
     const [isRegisterEnabled] = await this.db
       .select()
