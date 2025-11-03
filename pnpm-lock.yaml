@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@47ng/cloak':
-        specifier: ^1.2.0
-        version: 1.2.0
       '@nestjs/common':
         specifier: ^11.0.1
         version: 11.1.6(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -44,9 +41,6 @@ importers:
       argon2:
         specifier: ^0.44.0
         version: 0.44.0
-      body-parser:
-        specifier: ^2.2.0
-        version: 2.2.0
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -108,15 +102,9 @@ importers:
       '@swc/core':
         specifier: ^1.10.7
         version: 1.13.5
-      '@types/body-parser':
-        specifier: ^1.19.6
-        version: 1.19.6
       '@types/cookie-parser':
         specifier: ^1.4.9
         version: 1.4.9(@types/express@5.0.3)
-      '@types/dockerode':
-        specifier: ^3.3.44
-        version: 3.3.44
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.3
@@ -135,9 +123,6 @@ importers:
       '@types/qrcode':
         specifier: ^1.5.5
         version: 1.5.5
-      '@types/simple-oauth2':
-        specifier: ^5.0.7
-        version: 5.0.7
       '@types/supertest':
         specifier: ^6.0.2
         version: 6.0.3
@@ -191,14 +176,6 @@ importers:
         version: 8.44.0(eslint@9.35.0)(typescript@5.9.2)
 
 packages:
-
-  '@47ng/cloak@1.2.0':
-    resolution: {integrity: sha512-kKufIDIfW7+YdW+m/0PIFR9zsoIan04tCiAoWsvd2e/MsIh4HtU//n/xDk8eNTTl9cN/rI78qd1r2zCP0QB7hw==}
-    hasBin: true
-
-  '@47ng/codec@1.1.0':
-    resolution: {integrity: sha512-gvtA2RjijvEiYQbURPM6/Z+ySfS4lmtQ9NovDzzT+5ekeZ3M5pGiotlT94Qd+At4AYwWp7mWJLvxFn3JR+BZbA==}
-    engines: {node: '>=11'}
 
   '@angular-devkit/core@19.2.15':
     resolution: {integrity: sha512-pU2RZYX6vhd7uLSdLwPnuBcr0mXJSjp3EgOXKsrlQFQZevc+Qs+2JdXgIElnOT/aDqtRtriDmLlSbtdE8n3ZbA==}
@@ -1402,15 +1379,6 @@ packages:
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
 
-  '@stablelib/base64@1.0.1':
-    resolution: {integrity: sha512-1bnPQqSxSuc3Ii6MhBysoWCg58j97aUjuCSZrGSmDxNqtytIi0k8utUenAwTZN4V5mXXYGsVUI9zeBqy+jBOSQ==}
-
-  '@stablelib/hex@1.0.1':
-    resolution: {integrity: sha512-PQOEChVBjhYGgAD+ehO2ow1gSj1slre3jW4oMD4kV8VrhYhzmtsQDWDZej3BQO8qkVezdczDvISxVSF24PuYNA==}
-
-  '@stablelib/utf8@1.0.2':
-    resolution: {integrity: sha512-sDL1aB2U8FIpj7SjQJMxbOFIFkKvDKQGPHSrYejHZhtLNSK3qHe6ZIfa0woWkOiaJsdYslFzrc0VWXJZHmSIQQ==}
-
   '@swc/cli@0.6.0':
     resolution: {integrity: sha512-Q5FsI3Cw0fGMXhmsg7c08i4EmXCrcl+WnAxb6LYOLHw4JFFC3yzmx9LaXZ7QMbA+JZXbigU2TirI7RAfO0Qlnw==}
     engines: {node: '>= 16.14.0'}
@@ -1546,12 +1514,6 @@ packages:
   '@types/cookiejar@2.1.5':
     resolution: {integrity: sha512-he+DHOWReW0nghN24E1WUqM0efK4kI9oTqDm6XmK8ZPe2djZ90BSNdGnIyCLzCPw7/pogPlGbzI2wHGGmi4O/Q==}
 
-  '@types/docker-modem@3.0.6':
-    resolution: {integrity: sha512-yKpAGEuKRSS8wwx0joknWxsmLha78wNMe9R2S3UNsVOkZded8UqOrV8KoeDXoXsjndxwyF3eIhyClGbO1SEhEg==}
-
-  '@types/dockerode@3.3.44':
-    resolution: {integrity: sha512-fUpIHlsbYpxAJb285xx3vp7q5wf5mjqSn3cYwl/MhiM+DB99OdO5sOCPlO0PjO+TyOtphPs7tMVLU/RtOo/JjA==}
-
   '@types/eslint-scope@3.7.7':
     resolution: {integrity: sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg==}
 
@@ -1606,9 +1568,6 @@ packages:
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
 
-  '@types/node@18.19.130':
-    resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
-
   '@types/node@22.18.5':
     resolution: {integrity: sha512-g9BpPfJvxYBXUWI9bV37j6d6LTMNQ88hPwdWWUeYZnMhlo66FIg9gCc1/DZb15QylJSKwOZjwrckvOTWpOiChg==}
 
@@ -1629,12 +1588,6 @@ packages:
 
   '@types/serve-static@1.15.8':
     resolution: {integrity: sha512-roei0UY3LhpOJvjbIP6ZZFngyLKl5dskOtDhxY5THRSpO+ZI+nzJ+m5yUMzGrp89YRa7lvknKkMYjqQFGwA7Sg==}
-
-  '@types/simple-oauth2@5.0.7':
-    resolution: {integrity: sha512-8JbWVJbiTSBQP/7eiyGKyXWAqp3dKQZpaA+pdW16FCi32ujkzRMG8JfjoAzdWt6W8U591ZNdHcPtP2D7ILTKuA==}
-
-  '@types/ssh2@1.15.5':
-    resolution: {integrity: sha512-N1ASjp/nXH3ovBHddRJpli4ozpk6UdDYIX4RJWFa9L1YKnzdhTlVmiGHm4DZnj/jLbqZpes4aeR30EFGQtvhQQ==}
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
@@ -2343,10 +2296,6 @@ packages:
   dotenv-expand@12.0.1:
     resolution: {integrity: sha512-LaKRbou8gt0RNID/9RoI+J2rvXsBRPMV7p+ElHlPhcSARbCPDYcYG2s1TIzAfWv4YSgyY5taidWzzs31lNV3yQ==}
     engines: {node: '>=12'}
-
-  dotenv@10.0.0:
-    resolution: {integrity: sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==}
-    engines: {node: '>=10'}
 
   dotenv@16.4.7:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
@@ -3777,9 +3726,6 @@ packages:
   rxjs@7.8.2:
     resolution: {integrity: sha512-dhKf903U/PQZY6boNNtAGdWbG85WAbjT/1xYoZIC7FAY0yWapOBQVsVrDl58W86//e1VpMNBtRV4MaXfdMySFA==}
 
-  s-ago@2.2.0:
-    resolution: {integrity: sha512-t6Q/aFCCJSBf5UUkR/WH0mDHX8EGm2IBQ7nQLobVLsdxOlkryYMbOlwu2D4Cf7jPUp0v1LhfPgvIZNoi9k8lUA==}
-
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
@@ -4199,9 +4145,6 @@ packages:
   unbzip2-stream@1.4.3:
     resolution: {integrity: sha512-mlExGW4w71ebDJviH16lQLtZS32VKqsSfk80GCfUlwT/4/hNRFsoscrF/c++9xinkMzECL1uL9DDwXqFWkruPg==}
 
-  undici-types@5.26.5:
-    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
-
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
@@ -4354,22 +4297,6 @@ packages:
     resolution: {integrity: sha512-HI32jTq0AUAC125z30E8bQNz0RQ+9Uc+4J7V97gLYjZVKRjeydPgGt6dvQzFrav7MYOUGFqqOGiHpA/fdbd0cQ==}
 
 snapshots:
-
-  '@47ng/cloak@1.2.0':
-    dependencies:
-      '@47ng/codec': 1.1.0
-      '@stablelib/base64': 1.0.1
-      '@stablelib/hex': 1.0.1
-      '@stablelib/utf8': 1.0.2
-      chalk: 4.1.2
-      commander: 8.3.0
-      dotenv: 10.0.0
-      s-ago: 2.2.0
-
-  '@47ng/codec@1.1.0':
-    dependencies:
-      '@stablelib/base64': 1.0.1
-      '@stablelib/hex': 1.0.1
 
   '@angular-devkit/core@19.2.15(chokidar@4.0.3)':
     dependencies:
@@ -5590,12 +5517,6 @@ snapshots:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
-  '@stablelib/base64@1.0.1': {}
-
-  '@stablelib/hex@1.0.1': {}
-
-  '@stablelib/utf8@1.0.2': {}
-
   '@swc/cli@0.6.0(@swc/core@1.13.5)(chokidar@4.0.3)':
     dependencies:
       '@swc/core': 1.13.5
@@ -5724,17 +5645,6 @@ snapshots:
 
   '@types/cookiejar@2.1.5': {}
 
-  '@types/docker-modem@3.0.6':
-    dependencies:
-      '@types/node': 22.18.5
-      '@types/ssh2': 1.15.5
-
-  '@types/dockerode@3.3.44':
-    dependencies:
-      '@types/docker-modem': 3.0.6
-      '@types/node': 22.18.5
-      '@types/ssh2': 1.15.5
-
   '@types/eslint-scope@3.7.7':
     dependencies:
       '@types/eslint': 9.6.1
@@ -5798,10 +5708,6 @@ snapshots:
 
   '@types/ms@2.1.0': {}
 
-  '@types/node@18.19.130':
-    dependencies:
-      undici-types: 5.26.5
-
   '@types/node@22.18.5':
     dependencies:
       undici-types: 6.21.0
@@ -5830,12 +5736,6 @@ snapshots:
       '@types/http-errors': 2.0.5
       '@types/node': 22.18.5
       '@types/send': 0.17.5
-
-  '@types/simple-oauth2@5.0.7': {}
-
-  '@types/ssh2@1.15.5':
-    dependencies:
-      '@types/node': 18.19.130
 
   '@types/stack-utils@2.0.3': {}
 
@@ -6646,8 +6546,6 @@ snapshots:
   dotenv-expand@12.0.1:
     dependencies:
       dotenv: 16.4.7
-
-  dotenv@10.0.0: {}
 
   dotenv@16.4.7: {}
 
@@ -8199,8 +8097,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  s-ago@2.2.0: {}
-
   safe-buffer@5.2.1: {}
 
   safer-buffer@2.1.2: {}
@@ -8643,8 +8539,6 @@ snapshots:
     dependencies:
       buffer: 5.7.1
       through: 2.3.8
-
-  undici-types@5.26.5: {}
 
   undici-types@6.21.0: {}
 

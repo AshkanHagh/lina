@@ -7,7 +7,7 @@ import {
   Logger,
 } from "@nestjs/common";
 import { Response } from "express";
-import { LinaError } from "./exception";
+import { LinaError, LinaErrorType } from "./exception";
 
 @Catch(HttpException)
 export class LinaExceptionFilter implements ExceptionFilter {
@@ -17,16 +17,13 @@ export class LinaExceptionFilter implements ExceptionFilter {
     const res = host.switchToHttp().getResponse<Response>();
 
     this.logger.error(`message: ${exception.type || exception.message}`);
-    // @ts-expect-error unkown type
-    // eslint-disable-next-line
-    const errorCauseMsg = exception.cause?.message;
-    this.logger.error(`cause: ${errorCauseMsg || (exception.cause as string)}`);
+    this.logger.error(exception.cause);
 
     const statusCode = exception.getStatus();
 
     res.status(statusCode).json({
       statusCode: `${statusCode} ${HttpStatus[statusCode]}`,
-      message: exception.message || exception.type,
+      message: exception.type || LinaErrorType.INTERNAL_SERVER_ERROR,
     });
   }
 }

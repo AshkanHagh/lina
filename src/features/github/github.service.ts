@@ -203,7 +203,11 @@ export class GithubService implements IGithubService {
           .update(IntegrationTable)
           .set({
             data: sql`
-              jsonb_set(${IntegrationTable.data}, '{installationId}', to_jsonb(${payload.installation_id}::bigint))
+              jsonb_set(
+                ${IntegrationTable.data},
+                '{installationId}',
+                to_jsonb(${payload.installation_id}::bigint)
+              )
             `,
           })
           .where(
