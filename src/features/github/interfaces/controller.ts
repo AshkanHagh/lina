@@ -1,6 +1,15 @@
-import { InstallationCallbackDto } from "../dto";
+import {
+  GithubAppCallbackDto,
+  InstallCallbackDto,
+  SetupGithubAppDto,
+} from "../dtos";
 
 export interface IGithubController {
-  install(userId: string): Promise<{ url: string }>;
-  installationCallback(payload: InstallationCallbackDto): Promise<void>;
+  setupGithubApp(
+    userId: string,
+    payload: SetupGithubAppDto,
+  ): Promise<{ manifest: unknown; state: string; org: string | undefined }>;
+  githubAppCallback(payload: GithubAppCallbackDto): Promise<void>;
+  setupGithubInstall(userId: string): Promise<{ url: string }>;
+  githubInstallCallback(payload: InstallCallbackDto): Promise<void>;
 }

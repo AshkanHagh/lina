@@ -1,6 +1,15 @@
-import { InstallationCallbackPayload } from "../dto";
+import {
+  GithubAppCallbackPayload,
+  InstallCallbackPayload,
+  SetupGithubAppPayload,
+} from "../dtos";
 
 export interface IGithubService {
-  generateInstallationUrl(userId: string): Promise<string>;
-  installationCallback(payload: InstallationCallbackPayload): Promise<void>;
+  setupGithubApp(
+    userId: string,
+    payload: SetupGithubAppPayload,
+  ): Promise<{ manifest: unknown; state: string; org: string | undefined }>;
+  githubAppCallback(payload: GithubAppCallbackPayload): Promise<void>;
+  setupGithubInstall(userId: string): Promise<string>;
+  githubInstallCallback(payload: InstallCallbackPayload): Promise<void>;
 }

@@ -1,30 +1,20 @@
 import { Module } from "@nestjs/common";
 import { ConfigsModule } from "./configs/configs.module";
 import { DrizzleModule } from "./drizzle/drizzle.module";
-import { AuthModule } from "./features/auth/auth.module";
 import { APP_FILTER, APP_PIPE } from "@nestjs/core";
 import { LinaExceptionFilter } from "./filters/exception-filter";
 import { ZodValidationPipe } from "./utils/zod-validation.pipe";
-import { EmailModule } from "./features/email/email.module";
-import { WorkerModule } from "./worker/worker.module";
-import { EventEmitterModule } from "@nestjs/event-emitter";
-import { GithubModule } from "./features/github/github.module";
 import { ScheduleModule } from "@nestjs/schedule";
-import { OrchestrationModule } from "./features/orchestration/orchestration.module";
-import { BuildModule } from "./features/build/build.module";
+import { AuthModule } from "./features/auth/auth.module";
+import { GithubModule } from "./features/github/github.module";
 
 @Module({
   imports: [
     ConfigsModule.register(),
+    ScheduleModule.forRoot(),
     DrizzleModule,
     AuthModule,
-    EmailModule,
-    WorkerModule,
-    EventEmitterModule.forRoot(),
     GithubModule,
-    ScheduleModule.forRoot(),
-    OrchestrationModule,
-    BuildModule,
   ],
   providers: [
     {
