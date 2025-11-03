@@ -31,10 +31,14 @@ export class WebhookService implements IWebhookService, OnModuleInit {
   }
 
   // updates repos field with added repositories
-  async handleInstallationAdded(
-    event: EmitterWebhookEvent<"installation_repositories.added">,
+  async handleInstallation(
+    event: EmitterWebhookEvent<"installation_repositories">,
   ) {
     this.logger.log(`webhooks: ${event.name}.${event.payload.action}`);
+
+    if (event.payload.action !== "added") {
+      return;
+    }
 
     const githubApp = await this.webhookUtilService.getGithubApp(
       event.payload.installation.id,
@@ -90,8 +94,8 @@ export class WebhookService implements IWebhookService, OnModuleInit {
 
   onModuleInit() {
     this.webhooks.on(
-      "installation_repositories.added",
-      this.handleInstallationAdded.bind(this),
+      "installation_repositories",
+      this.handleInstallation.bind(this),
     );
     this.webhooks.on(
       "installation_repositories.removed",

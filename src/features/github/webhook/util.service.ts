@@ -19,7 +19,7 @@ export class WebhookUtilService {
     try {
       const payload = JSON.parse(rawPayload) as Record<string, any>;
       // eslint-disable-next-line
-      installationId = payload.installation.id as number;
+      installationId = payload.installation?.id as number | undefined;
       if (!installationId) {
         throw new LinaError(LinaErrorType.INSTALLATION_ID_MISSING);
       }

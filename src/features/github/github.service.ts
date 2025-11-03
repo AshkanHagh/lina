@@ -12,10 +12,10 @@ import {
   RedirectStateTable,
   SettingTable,
 } from "src/drizzle/schemas";
-import { and, eq, gt, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { LinaError, LinaErrorType } from "src/filters/exception";
 import { randomBytes } from "node:crypto";
-import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
+import { Octokit } from "@octokit/rest";
 import Cryptr from "cryptr";
 import { GithubAppDetails } from "./types";
 
@@ -31,25 +31,22 @@ export class GithubService implements IGithubService {
 
   // returns a dynamic manifest and state.
   async setupGithubApp(userId: string, payload: SetupGithubAppPayload) {
-    const [[instanceUrl], [webhookUrl]] = await Promise.all([
-      this.db
-        .select({ value: SettingTable.value })
-        .from(SettingTable)
-        .where(eq(SettingTable.key, "APP_URL")),
-      this.db
-        .select({ value: SettingTable.value })
-        .from(SettingTable)
-        .where(eq(SettingTable.key, "GITHUB_WEBHOOK_URL")),
-    ]);
+    const [instanceUrl] = await this.db
+      .select({ value: SettingTable.value })
+      .from(SettingTable)
+      .where(eq(SettingTable.key, "APP_URL"));
 
-    if (!instanceUrl) {
-      throw new LinaError(LinaErrorType.SETTING_NOT_FOUND, "APP_URL");
-    }
-    if (!webhookUrl) {
-      throw new LinaError(
-        LinaErrorType.SETTING_NOT_FOUND,
-        "GITHUB_WEBHOOK_URL",
-      );
+    const redirectUrl = `${instanceUrl.value}/api/v1/github/app/callback`;
+    const setupUrl = `${instanceUrl.value}/api/v1/github/install/callback`;
+    let webhookUrl = `${instanceUrl.value}/api/v1/Webhooks/github`;
+
+    // in development, override webhook URL to use a separate HTTPS service (e.g., ngrok)
+    if (process.env.NODE_ENV != "production") {
+      const [webhookSetting] = await this.db
+        .select({ value: SettingTable.value })
+        .from(SettingTable)
+        .where(eq(SettingTable.key, "GITHUB_WEBHOOK_URL"));
+      webhookUrl = webhookSetting.value!;
     }
 
     const state = randomBytes(32).toString("hex");
@@ -67,18 +64,17 @@ export class GithubService implements IGithubService {
         name: payload.name,
         url: instanceUrl.value,
         hook_attributes: {
-          url: webhookUrl.value,
+          url: webhookUrl,
           active: true,
         },
-        redirect_url: `${instanceUrl.value}/api/v1/github/app/callback`,
-        setup_url: `${instanceUrl.value}/api/v1/github/install/callback`,
+        redirect_url: redirectUrl,
+        setup_url: setupUrl,
         public: false,
         default_permissions: {
           contents: "read",
           metadata: "read",
         },
         default_events: ["push"],
-        description: "GitHub App for automated deployments via Lina",
       },
     };
   }
@@ -88,36 +84,37 @@ export class GithubService implements IGithubService {
     exchanges the code for GitHub App credentials
   */
   async githubAppCallback(payload: GithubAppCallbackPayload) {
-    const [state] = await this.db
-      .select()
-      .from(RedirectStateTable)
-      .where(
-        and(
-          eq(RedirectStateTable.token, payload.state),
-          gt(
-            RedirectStateTable.expiresAt,
-            new Date(Date.now() - 1000 * 60 * 15),
-          ),
+    const state = await this.db.query.RedirectStateTable.findFirst({
+      where: (table, funcs) =>
+        funcs.and(
+          funcs.eq(table.token, payload.state),
+          funcs.gt(table.expiresAt, new Date(Date.now() - 1000 * 60 * 15)),
         ),
-      );
+    });
     if (!state) {
       throw new LinaError(LinaErrorType.INVALID_STATE);
     }
 
-    // octokit response type
-    let githubAppDetails: RestEndpointMethodTypes["apps"]["createFromManifest"]["response"]["data"];
+    let appCredentials: {
+      pem: string;
+      client_id: string;
+      client_secret: string;
+      id: number;
+      slug?: string;
+      name: string | null;
+      webhook_secret: string | null;
+      permissions: Record<string, unknown>;
+    };
+
+    // complete GitHub App creation handshake to get app credentials and details
     try {
       const result = await this.octokit.apps.createFromManifest({
         code: payload.code,
       });
-      if (!result.data.webhook_secret) {
-        throw new LinaError(
-          LinaErrorType.GITHUB_APP_SETUP_FAILED,
-          "Webhook secret is missing",
-        );
-      }
-
-      githubAppDetails = result.data;
+      appCredentials = {
+        ...result.data,
+        pem: this.cryptr.encrypt(result.data.pem),
+      };
     } catch (error) {
       throw new LinaError(LinaErrorType.GITHUB_APP_SETUP_FAILED, error);
     }
@@ -129,33 +126,31 @@ export class GithubService implements IGithubService {
         .execute();
 
       await tx.insert(IntegrationTable).values({
-        type: "github_app",
+        type: "GITHUB_APP",
+        name: appCredentials.slug || appCredentials.name,
         data: <GithubAppDetails>{
-          pem: this.cryptr.encrypt(githubAppDetails.pem),
-          clientId: githubAppDetails.client_id,
-          clientSecret: githubAppDetails.client_secret,
-          id: githubAppDetails.id,
-          slug: githubAppDetails.slug || githubAppDetails.name,
-          webhookSecret: githubAppDetails.webhook_secret!,
-          permissions: githubAppDetails.permissions as Record<string, string>,
+          pem: appCredentials.pem,
+          clientId: appCredentials.client_id,
+          clientSecret: appCredentials.client_secret,
+          id: appCredentials.id,
+          slug: appCredentials.slug || appCredentials.name,
+          webhookSecret: appCredentials.webhook_secret!,
+          permissions: appCredentials.permissions,
         },
         userId: state.userId,
       });
     });
   }
 
-  async setupGithubInstall(userId: string): Promise<string> {
-    const [integration] = await this.db
-      .select({
-        data: IntegrationTable.data,
-      })
-      .from(IntegrationTable)
-      .where(
-        and(
-          eq(IntegrationTable.type, "github_app"),
-          eq(IntegrationTable.userId, userId),
+  async setupGithubInstall(userId: string, appSlug: string): Promise<string> {
+    const integration = await this.db.query.IntegrationTable.findFirst({
+      where: (table, funcs) =>
+        funcs.and(
+          funcs.eq(table.type, "GITHUB_APP"),
+          funcs.eq(table.name, appSlug),
+          funcs.eq(table.userId, userId),
         ),
-      );
+    });
 
     if (!integration) {
       throw new LinaError(LinaErrorType.GITHUB_APP_NOT_CREATED_OR_CONFIGURED);
@@ -166,28 +161,26 @@ export class GithubService implements IGithubService {
       flow: "github_installation",
       expiresAt: new Date(Date.now() + 1000 * 60 * 15),
       token: state,
+      data: {
+        integrationId: integration.id,
+      },
       userId,
     });
 
     // Split base URL and return URL to keep lines short and readable
-    // @ts-expect-error unknown type
+    // eslint-disable-next-line
     const baseUrl = `https://github.com/apps/${integration.data.slug}/installations/new`;
     return `${baseUrl}?state=${encodeURIComponent(state)}`;
   }
 
   async githubInstallCallback(payload: InstallCallbackPayload) {
-    const [state] = await this.db
-      .select()
-      .from(RedirectStateTable)
-      .where(
-        and(
-          eq(RedirectStateTable.token, payload.state),
-          gt(
-            RedirectStateTable.expiresAt,
-            new Date(Date.now() - 1000 * 60 * 15),
-          ),
+    const state = await this.db.query.RedirectStateTable.findFirst({
+      where: (table, funcs) =>
+        funcs.and(
+          funcs.eq(table.token, payload.state),
+          funcs.gt(table.expiresAt, new Date(Date.now() - 1000 * 60 * 15)),
         ),
-      );
+    });
     if (!state) {
       throw new LinaError(LinaErrorType.INVALID_STATE);
     }
@@ -210,12 +203,7 @@ export class GithubService implements IGithubService {
               )
             `,
           })
-          .where(
-            and(
-              eq(IntegrationTable.userId, state.userId),
-              eq(IntegrationTable.type, "github_app"),
-            ),
-          );
+          .where(eq(IntegrationTable.id, state.data!.integrationId as string));
       }
     });
   }

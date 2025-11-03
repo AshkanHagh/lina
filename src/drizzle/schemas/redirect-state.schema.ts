@@ -14,6 +14,7 @@ export const RedirectStateTable = pgTable(
         .references(() => UserTable.id, { onDelete: "cascade" }),
       flow: table.varchar({ length: 255 }).notNull(),
       token: table.text().notNull(),
+      data: table.jsonb().$type<Record<string, unknown>>(),
       expiresAt: table.timestamp().notNull(),
     };
   },

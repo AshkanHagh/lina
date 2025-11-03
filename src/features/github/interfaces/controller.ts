@@ -10,6 +10,6 @@ export interface IGithubController {
     payload: SetupGithubAppDto,
   ): Promise<{ manifest: unknown; state: string; org: string | undefined }>;
   githubAppCallback(payload: GithubAppCallbackDto): Promise<void>;
-  setupGithubInstall(userId: string): Promise<{ url: string }>;
+  setupGithubInstall(userId: string, appSlug: string): Promise<{ url: string }>;
   githubInstallCallback(payload: InstallCallbackDto): Promise<void>;
 }

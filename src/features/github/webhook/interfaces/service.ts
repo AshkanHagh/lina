@@ -1,7 +1,10 @@
 import { EmitterWebhookEvent } from "@octokit/webhooks";
 
 export interface IWebhookService {
-  handleInstallationAdded(
+  handleInstallation(
     payload: EmitterWebhookEvent<"installation_repositories.added">,
+  ): Promise<void>;
+  handleInstallationRemoved(
+    payload: EmitterWebhookEvent<"installation_repositories.removed">,
   ): Promise<void>;
 }

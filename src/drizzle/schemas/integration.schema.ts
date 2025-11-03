@@ -12,7 +12,7 @@ export const IntegrationTable = pgTable("integrations", (table) => {
       .references(() => UserTable.id, { onDelete: "cascade" }),
     type: table.varchar({ length: 255 }).notNull(),
     name: table.varchar({ length: 255 }),
-    data: table.jsonb().notNull(),
+    data: table.jsonb().notNull().$type<Record<string, unknown>>(),
     createdAt,
     updatedAt,
   };

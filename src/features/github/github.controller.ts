@@ -31,8 +31,9 @@ export class GithubController implements IGithubController {
   @UseGuards(AuthorizationGuard)
   async setupGithubInstall(
     @UserD("id") userId: string,
+    @Query("appSlug") appSlug: string,
   ): Promise<{ url: string }> {
-    const url = await this.githubService.setupGithubInstall(userId);
+    const url = await this.githubService.setupGithubInstall(userId, appSlug);
     return { url };
   }
 
