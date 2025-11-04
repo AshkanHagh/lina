@@ -3,6 +3,7 @@ import {
   InstallCallbackPayload,
   SetupGithubAppPayload,
 } from "../dtos";
+import { GithubAppDetails } from "../types";
 
 export interface IGithubService {
   setupGithubApp(
@@ -12,4 +13,8 @@ export interface IGithubService {
   githubAppCallback(payload: GithubAppCallbackPayload): Promise<void>;
   setupGithubInstall(userId: string, appSlug: string): Promise<string>;
   githubInstallCallback(payload: InstallCallbackPayload): Promise<void>;
+  getGithubApp(
+    userId: string,
+    integrationId: string,
+  ): Promise<Omit<GithubAppDetails, "pem">>;
 }

@@ -207,4 +207,29 @@ export class GithubService implements IGithubService {
       }
     });
   }
+
+  async getGithubApp(
+    userId: string,
+    integrationId: string,
+  ): Promise<Omit<GithubAppDetails, "pem">> {
+    const integration = await this.db.query.IntegrationTable.findFirst({
+      where: (table, funcs) =>
+        funcs.and(
+          funcs.eq(table.id, integrationId),
+          funcs.eq(table.userId, userId),
+        ),
+      columns: {
+        data: true,
+      },
+    });
+
+    if (!integration) {
+      throw new LinaError(LinaErrorType.INTEGRATION_NOT_FOUND);
+    }
+
+    const appDetails = integration.data as GithubAppDetails;
+    // eslint-disable-next-line
+    const { pem, ...rest } = appDetails;
+    return rest;
+  }
 }
